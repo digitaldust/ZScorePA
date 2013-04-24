@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
@@ -160,13 +161,13 @@ public class Statistics extends DefaultCommand {
         System.out.println("lcc has " + usersLcc.size() + " user");
         System.out.println("lcc has " + threadsLcc.size() + " threads");
         // write activity file.
-        System.out.println("EMPIRICAL ACTIVITY ANALYSYS");
-        WriteStats.writeActivity(g, users, activityPath);
         System.out.println("EMPIRICAL WRITE DEGREE DISTRIBUTION");
         WriteStats.writeDegreeDistribution(g, usersLcc, usersDegreeDistribution);
         WriteStats.writeDegreeDistribution(g, threadsLcc, threadsDegreeDistribution);
         System.out.println("EMPIRICAL WRITE STATS");
-        WriteStats.writeBipartiteStats(g, users, threads, usersStatsPath, threadsStatsPath);
+        HashMap<Double, Collection<Node>> degreeDistr = WriteStats.writeBipartiteStats(g, users, threads, usersStatsPath, threadsStatsPath);
+        System.out.println("EMPIRICAL ACTIVITY ANALYSYS");
+        WriteStats.writeActivity(degreeDistr, users, activityPath);
         System.out.println("EMPIRICAL ANALYSIS DONE");
     }
 

@@ -295,6 +295,9 @@ public class ZpaGenerate extends DefaultCommand {
         Collection<Node> userNei = zpa.getNeighbors(n);
         // IF HELP-NEWBY MECHANISM IS SELECTED
         if (cntxt.getRNG().nextDouble() <= help_strength) {
+            /**
+             * BIG USER TRIES TO HELP NEWBY.
+             */
             // MAKE THREADS ITERATOR
             Iterator<Node> threadsIter = threads.iterator();
             // ASK EACH THREAD
@@ -309,60 +312,54 @@ public class ZpaGenerate extends DefaultCommand {
                     dist = 0;
                 }
                 // IF USER HAS ALREADY COMMENTED ON THIS THREAD
-                if(userNei.contains(aThread)){
+                if (userNei.contains(aThread)) {
                     // IT IS LESS PROBABLE THAT HE WILL POST AGAIN
-                    aThread.setZpaProb(dist / 2);
-                    // INCREMENT LOTTERY BUCKET
-                    cum += dist / 2;
-                // OTHERWISE
-                } else {
-                    // SET THIS THREAD PROBABILITY TO GET CHOSEN
-                    aThread.setZpaProb(dist);
-                    // INCREMENT LOTTERY BUCKET
-                    cum += dist;
-                }
-            }
-        // ELSE
-        } else {
-            // USER TRIES TO MEET WITH HIS BUDDIES TO CHAT
-//            // si prova a vedere con il sampling che succede?
-//            ArrayList<Node> sampledTwo = sampling(400, cntxt, threads);
-            double me = n.getDegree() * n.getZindex();
-            if (me < 1) {
-                me = 1.0;
-            }
-            ArrayList<Node> twoDistUsers = n.getNeiOfNei();
-            Iterator<Node> sampledIter = threads.iterator();
-            while (sampledIter.hasNext()) {
-                Node aThread = sampledIter.next();
-                double count = 0;
-                Collection<Node> aThreadUsers = zpa.getNeighbors(aThread);
-                int size = aThreadUsers.size();
-                Iterator<Node> aThreadUsersIter = aThreadUsers.iterator();
-                while (aThreadUsersIter.hasNext()) {
-                    Node aTwoDistNei = aThreadUsersIter.next();
-                    if (twoDistUsers.contains(aTwoDistNei)) {
-                        count++;
-                        if (count > size / 5) {
-                            break;
-                        }
-                    }
-                }
-                if (count == 0) {
-                    count = 1 / aThread.getDegree() + 1;
-                }
-                me *= count;
-                // END ADDED NOW
-                double value = (double) cntxt.getRNG().nextInt((int) me);
+                    dist /= 2;
+                } 
                 // SET THIS THREAD PROBABILITY TO GET CHOSEN
-                aThread.setZpaProb(value);
+                aThread.setZpaProb(dist);
                 // INCREMENT LOTTERY BUCKET
-                cum += value;
+                cum += dist;
+            }
+            // ELSE
+        } else {
+            /**
+             * USER TRIES TO MEET WITH HIS BUDDIES TO CHAT.
+             */
+            // RETRIEVE MY 2-DIST NEIGHBORS
+            ArrayList<Node> twoDistUsers = n.getNeiOfNei();
+            // MAKE ITERATOR FOR THREADS LIST
+            Iterator<Node> threadsIter = threads.iterator();
+            // ASK EACH THREAD
+            while (threadsIter.hasNext()) {
+                // RETRIEVE THIS THREAD
+                Node aThread = threadsIter.next();
+                // USERS CONNECTED TO THIS THREAD
+                Collection<Node> threadsNei = zpa.getNeighbors(aThread);
+                // FIND THIS THREAD PROBABILITY TO GET CHOSEN 
+                double dist;
+                // CHECK IF SOME USERS OF THIS THREAD ARE ALREADY IN MY 2-DIST NEI
+                // IF NO USERS IS IN MY 2-DIST NEI LIST
+                if (Collections.disjoint(twoDistUsers, threadsNei)) {
+                    // THIS THREAD PROB IS LINKED TO THREAD IMPORTANCE
+                    // WHICH CAN BE PROXIED BY ITS DEGREE
+                    dist = aThread.getDegree() * cntxt.getRNG().nextDouble();
+                // ELSE IF AT LEAST ONE USER IS ALREADY IN MY 2-DIST NEI
+                } else {
+                    // THIS THREAD PROB IS INFLUENCED BY MY FRIENDS HERE AND BY THREAD IMPORTANCE
+                    dist = aThread.getDegree();
+                }
+                // END ADDED NOW
+//                double value = (double) cntxt.getRNG().nextInt((int) me);
+                // SET THIS THREAD PROBABILITY TO GET CHOSEN
+                aThread.setZpaProb(dist);
+                // INCREMENT LOTTERY BUCKET
+                cum += dist;
             }
         }
         /**
-         * THIS METHOD IS TRANSLATED FROM THE NETLOGO LOTTERY EXAMPLE
-         * PLEASE REFER TO THAT MODEL FOR FURTHER INFO.
+         * THIS METHOD IS TRANSLATED FROM THE NETLOGO LOTTERY EXAMPLE PLEASE
+         * REFER TO THAT MODEL FOR FURTHER INFO.
          */
         // IF LOTTERY BUCKET IS EMPTY, THREADS HAVE EQUAL PROBABILITY TO GET CHOSEN
         if (cum <= 0) {
@@ -370,23 +367,23 @@ public class ZpaGenerate extends DefaultCommand {
             int iddu = cntxt.getRNG().nextInt(threads.size() - 1);
             // AND RETURN THE INDEXED THREAD
             return threads.get(iddu);
-        // ELSE
+            // ELSE
         } else {
             // PICK A RANDOM VALUE FROM THE LOTTERY BUCKET 
             int pick = cntxt.getRNG().nextInt((int) cum);
             // MAKE ITERATOR
             Iterator<Node> threadsIter = threads.iterator();
             // ASK EACH THREAD
-            while(threadsIter.hasNext()){
+            while (threadsIter.hasNext()) {
                 // RETRIEVE THIS THREAD
                 Node t = threadsIter.next();
                 // IF WINNER IS NULL AND THIS THREAD HAS A PROBABILITY GREATER THAN PICK
-                if(winner == null && t.getZpaProb() > (double)pick){
+                if (winner == null && t.getZpaProb() > (double) pick) {
                     // THIS THREAD IS THE ONE
                     return t;
                 } else {
                     // OTHERWISE DECREMENT PICK OF THIS THREAD PROBABILITY
-                    pick -= (int)t.getZpaProb();
+                    pick -= (int) t.getZpaProb();
                 }
             }
         }
