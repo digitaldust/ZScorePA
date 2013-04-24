@@ -31,6 +31,7 @@ public class Node {
     private double zpaThreads;
     private double zpaZindex;
     private ArrayList<Node> neiOfNei;
+    private double zpaProb;
 
     /**
      * @return the node
@@ -300,6 +301,20 @@ public class Node {
     
     public void initializeNeiOfNei(){
         this.neiOfNei = new ArrayList<Node>();
+    }
+
+    /**
+     * @return the ZpaProb
+     */
+    public double getZpaProb() {
+        return zpaProb;
+    }
+
+    /**
+     * @param ZpaProb the ZpaProb to set
+     */
+    public void setZpaProb(double zpaProb) {
+        this.zpaProb = zpaProb;
     }
     
 }
