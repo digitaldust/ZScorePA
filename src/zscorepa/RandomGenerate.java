@@ -44,7 +44,7 @@ public class RandomGenerate extends DefaultCommand {
         // experiment number
         double expNum = argmnts[2].getDoubleValue();
         // network file path
-        String networkPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/_bipartite_networks/" + forumName + "-random.txt";
+        String networkPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/_bipartite_networks/" + forumName + "-" + method + "-random.txt";
         String usersDegreePath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/_degrees_empiric_networks/users-degree-" + forumName + "-empirical.txt";
         String threadsDegreePath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/_degrees_empiric_networks/threads-degree-" + forumName + "-empirical.txt";
         // for each experiment
@@ -52,8 +52,8 @@ public class RandomGenerate extends DefaultCommand {
             int expp = exp + 1;
             System.out.println("START RANDOM EXPERIMENT " + expp);
             // this experiment paths
-            String usersStatsPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/users-stats-" + forumName + "-random.txt";
-            String threadsStatsPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/threads-stats-" + forumName + "-random.txt";
+            String usersStatsPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/users-stats-" + forumName + "-" + method + "-random.txt";
+            String threadsStatsPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/threads-stats-" + forumName + "-" + method + "-random.txt";
             // built an empty network first
             UndirectedSparseGraph<Node, Edge> rand = new UndirectedSparseGraph<Node, Edge>();
             // retrieve the right degree files
@@ -160,6 +160,23 @@ public class RandomGenerate extends DefaultCommand {
                     } else {
                         System.out.println("ho finito prima!!!");
                     }
+                }
+            }
+            // RETRIEVE ALL NODES
+            Collection<Node> vertices = rand.getVertices();
+            // CLEAN USERS LIST
+            users = new ArrayList<Node>();
+            // CLEAN THREADS LIST
+            threads = new ArrayList<Node>();
+            // ASK EACH NODE
+            for (Node n : vertices) {
+                // IF NODE IS A USER
+                if (n.getColor().equals("red")) {
+                    // ADD TO USERS LIST
+                    users.add(n);
+                } else {
+                    // ADD TO THREADS LIST
+                    threads.add(n);
                 }
             }
             System.out.println("EXPERIMENT " + expp + " WRITE NETWORK");

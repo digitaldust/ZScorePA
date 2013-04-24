@@ -159,6 +159,8 @@ public class ZpaGenerate extends DefaultCommand {
 //                        n.setThreads(n.getThreads() - 1);
                         // DECREMENT TOTAL NUMBER OF POSTS BY 1 - USER CONSUMES A POST TO START A THREAD
                         n.setPosts(n.getPosts() - 1);
+                        // FOR THE SAME REASON, DECREMENT TOTAL ACTIVITY
+                        totalActivity--;
                         // USED TO CALCULATE POSTS ACTIVITY STATS AND LEAVE POSTS() FREE FOR MANIPULATION
                         n.setZpaPosts(n.getZpaPosts() + 1);
                     }
@@ -326,10 +328,12 @@ public class ZpaGenerate extends DefaultCommand {
             /**
              * USER TRIES TO MEET WITH HIS BUDDIES TO CHAT.
              */
+            // SAMPLE TO SPEED UP MODEL
+            ArrayList<Node> sampled = sampling(400, cntxt, threads);
             // RETRIEVE MY 2-DIST NEIGHBORS
             ArrayList<Node> twoDistUsers = n.getNeiOfNei();
             // MAKE ITERATOR FOR THREADS LIST
-            Iterator<Node> threadsIter = threads.iterator();
+            Iterator<Node> threadsIter = sampled.iterator();
             // ASK EACH THREAD
             while (threadsIter.hasNext()) {
                 // RETRIEVE THIS THREAD
@@ -390,29 +394,11 @@ public class ZpaGenerate extends DefaultCommand {
         return winner;
     }
 
-    private ArrayList<Node> sampler(ArrayList<Node> threads, int limit, Context cntxt, UndirectedSparseGraph<Node, Edge> zpa, double threadSize) {
-
-        ArrayList<Node> winners = new ArrayList<Node>();
-        while (limit > 0) {
-            boolean stop = true;
-            while (stop) {
-                int iddu = cntxt.getRNG().nextInt(threads.size() - 1);
-                Node get = threads.get(iddu);
-                if (zpa.getNeighbors(get).size() < threadSize) {
-                    winners.add(get);
-                    stop = false;
-                    limit--;
-                }
-            }
-        }
-        return winners;
-    }
-
-    private ArrayList<Node> sampling(int i, Context cntxt, ArrayList<Node> sampled) {
+    private ArrayList<Node> sampling(int i, Context cntxt, ArrayList<Node> threads) {
         ArrayList<Node> winners = new ArrayList<Node>();
         while (i > 0) {
-            int iddu = cntxt.getRNG().nextInt(sampled.size() - 1);
-            winners.add(sampled.get(iddu));
+            int iddu = cntxt.getRNG().nextInt(threads.size() - 1);
+            winners.add(threads.get(iddu));
             i--;
         }
         return winners;
