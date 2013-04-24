@@ -78,7 +78,7 @@ public class ZpaGenerate extends DefaultCommand {
             }
             // CREATE ARRAYS TO HOLD USERS AND THREADS
             ArrayList<Node> users = new ArrayList<Node>();
-            ArrayList<Node> threads = new ArrayList<Node>();
+            ArrayList<Node> threads = new ArrayList<Node>(); 
             // STRING TO HOLD THE BUFFER LINE
             String line;
             // COUNTER FOR SETTING THREAD ID
@@ -89,21 +89,31 @@ public class ZpaGenerate extends DefaultCommand {
                 while ((line = attributeFile.readLine()) != null) {
                     // CREATE THE ARRAY
                     String[] splitUser = line.split(",");
-                    // create user and save data
+                    // CREATE USER
                     Node n = new Node();
+                    // SET USER'S ID
                     n.setId(Integer.valueOf(splitUser[0].substring(1)));
+                    // SET HIS NAME
                     n.setName(splitUser[0]);
+                    // SET HIS COLOR
                     n.setColor("red");
+                    // SET HIS TOTAL NUMBER OF POSTS
                     n.setPosts(Double.valueOf(splitUser[1]));
+                    // SET HIS TOTAL NUMBER OF THREADS
                     n.setThreads(Double.valueOf(splitUser[2]));
+                    // CALCULATE USER'S Z-INDEX
                     double zindex = (n.getPosts() - n.getThreads()) / Math.sqrt(n.getPosts() + n.getThreads());
+                    // SET HIS Z-INDEX
                     n.setZindex(zindex);
+                    // INITIALIZE HIS LIST OF 2-DIST NEI
                     n.initializeNeiOfNei();
+                    // ADD THIS USER TO THE NETWORK
                     zpa.addVertex(n);
+                    // ADD THIS USER TO THE LIST OF USERS
                     users.add(n);
+                    // FIXME: THIS I DO NOT REMEMBER FOR WHAT...
                     n.setZpaThreads(n.getThreads());
-                    // create threads for this user
-                    //System.out.println("user " + n.getName() + " has to do " + n.getThreads() + " threads.");
+                    // CREATE ALL THE THREADS STARTED BY THIS USER
                     int limit = (int) Math.floor(n.getThreads());
                     for (int i = 0; i < limit; i++) {
                         Node thread = new Node();
