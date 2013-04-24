@@ -1,0 +1,13 @@
+How to compile ZScorePA:
+
+javac -classpath "lib/*::/Applications/NetLogo 5.0.4/NetLogo.jar" -d classes src/zscorepa/Edge.java src/zscorepa/Model.java src/zscorepa/Node.java src/zscorepa/RandomGenerate.java src/zscorepa/zscorepa.java src/zscorepa/Statistics.java -Xlint:unchecked
+
+jar cvfm /Users/digitaldust/Dropbox/Gabbriellini-RFS/zscorepa/zscorepa.jar manifest.txt -C classes .
+
+
+TODO:
+- amount of posts should be a parameter / DONE
+- sort results before writing to file   / DONE
+
+- add timestamp to filename             / 
+- 
