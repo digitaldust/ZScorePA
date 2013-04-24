@@ -18,23 +18,8 @@ import org.nlogo.api.ExtensionException;
  */
 public class WriteStats {
 
-    static void writeActivity(UndirectedSparseGraph<Node, Edge> zpa, ArrayList<Node> users, String activityPath) throws ExtensionException {
-        // store an array of nodes for each degree found in the network
-        HashMap<Double, Collection<Node>> degree = new HashMap<Double, Collection<Node>>();
-        Iterator<Node> degreeIter = users.iterator();
-        while (degreeIter.hasNext()) {
-            Node ego = degreeIter.next();
-            double deg = zpa.degree(ego);
-            if (degree.containsKey(deg)) {
-                Collection<Node> nodeWithDegree = degree.get(deg);
-                nodeWithDegree.add(ego);
-                degree.put(deg, nodeWithDegree);
-            } else {
-                ArrayList<Node> nodeWithDegree = new ArrayList<Node>();
-                nodeWithDegree.add(ego);
-                degree.put(deg, nodeWithDegree);
-            }
-        }
+    static void writeActivity(HashMap<Double, Collection<Node>> degree, ArrayList<Node> users, String activityPath) throws ExtensionException {
+        
         // calculate average posts, thread and zindex activity for each degree
         HashMap<Double, Double> posts_hash = new HashMap<Double, Double>();
         HashMap<Double, Double> threads_hash = new HashMap<Double, Double>();
@@ -96,7 +81,7 @@ public class WriteStats {
         }
     }
     
-    static void writeBipartiteStats(UndirectedSparseGraph<Node, Edge> g, ArrayList<Node> users, ArrayList<Node> threads, String usersStatsPath, String threadsStatsPath) throws ExtensionException {
+    static HashMap<Double, Collection<Node>> writeBipartiteStats(UndirectedSparseGraph<Node, Edge> g, ArrayList<Node> users, ArrayList<Node> threads, String usersStatsPath, String threadsStatsPath) throws ExtensionException {
 
         // export the degree of the empirical analyzed - if an empirical network has been analyzed
         // why do I remove isolates? because the procedure for generating a random bipartite network
@@ -118,8 +103,9 @@ public class WriteStats {
         // calculate values
         findValues(g);
         // save values to file
-        storeResults(users, usersStatsPath);
+        HashMap<Double, Collection<Node>> degree = storeResults(users, usersStatsPath);
         storeResults(threads, threadsStatsPath);
+        return degree;
     }
 
     /**
@@ -140,7 +126,7 @@ public class WriteStats {
     /**
      * store results
      */
-    private static void storeResults(Collection<Node> nodes, String fileName) throws ExtensionException {
+    private static HashMap<Double, Collection<Node>> storeResults(Collection<Node> nodes, String fileName) throws ExtensionException {
         //
         HashMap<Double, Collection<Node>> degree = new HashMap<Double, Collection<Node>>();
         // store an array of nodes for each degree found in the network
@@ -215,6 +201,7 @@ public class WriteStats {
         } catch (IOException e) {
             throw new ExtensionException(e);
         }
+        return degree;
     }
 
     // find how many commons nei two nodes in the same partition have

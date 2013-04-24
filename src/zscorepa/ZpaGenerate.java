@@ -17,6 +17,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.Predicate;
 import org.nlogo.api.Argument;
 import org.nlogo.api.Context;
 import org.nlogo.api.DefaultCommand;
@@ -44,16 +46,18 @@ public class ZpaGenerate extends DefaultCommand {
         // help strength
         double help_strength = argmnts[1].getDoubleValue();
         // average thread size for this empirical forum
-        double threadSize = argmnts[2].getDoubleValue();
+        final double maxThreadSize = argmnts[2].getDoubleValue();
         // experiment number
         double expNum = argmnts[3].getDoubleValue();
-        /** 
-         * Start experiments round and statistics analysis. Basically, a zpa network is created
-         * then its activity is analyzed, then on the very same network statistics are calculated, this should 
-         * drop down computation time, because you don't have to load and generate new networks each time
-         * but all the analysis is done on the same network.
-         * Then R should be called and the output analysis generated - for convenience, because it is a pity
-         * to manually run it each time when the script is already made.
+        /**
+         * Start experiments round and statistics analysis. Basically, a zpa
+         * network is created then its activity is analyzed, then on the very
+         * same network statistics are calculated, this should drop down
+         * computation time, because you don't have to load and generate new
+         * networks each time but all the analysis is done on the same network.
+         * Then R should be called and the output analysis generated - for
+         * convenience, because it is a pity to manually run it each time when
+         * the script is already made.
          */
         // network path is always the same, nets are being rewrited each time on the same file.
         String networkPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/_bipartite_networks/" + forumName + "-zpa.txt";
@@ -64,9 +68,9 @@ public class ZpaGenerate extends DefaultCommand {
             // TERMINAL OUTPUT
             System.out.println("START ZPA EXPERIMENT " + expp);
             // EXPERIMENT PATHS FOR USERS' STATS AND ACTIVITY AND THREADS STATS
-            String usersStatsPath   = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/users-stats-" + forumName + "-zpa.txt";
+            String usersStatsPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/users-stats-" + forumName + "-zpa.txt";
             String threadsStatsPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/threads-stats-" + forumName + "-zpa.txt";
-            String activityPath     = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/users-activity-" + forumName + "-zpa.txt";
+            String activityPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/users-activity-" + forumName + "-zpa.txt";
             // CREATE AN EMPTY GRAPH 
             UndirectedSparseGraph<Node, Edge> zpa = new UndirectedSparseGraph<Node, Edge>();
             // READ IN EMPIRICAL ATTRIBUTES FILE
@@ -78,11 +82,13 @@ public class ZpaGenerate extends DefaultCommand {
             }
             // CREATE ARRAYS TO HOLD USERS AND THREADS
             ArrayList<Node> users = new ArrayList<Node>();
-            ArrayList<Node> threads = new ArrayList<Node>(); 
+            ArrayList<Node> threads = new ArrayList<Node>();
             // STRING TO HOLD THE BUFFER LINE
             String line;
             // COUNTER FOR SETTING THREAD ID
             int threadCounter = 0;
+            // INITIALIZE TOTAL ACTIVITY - I.E. THE TOTAL NUMBER OF POSTS
+            double totalActivity = 0;
             // TRY
             try {
                 // FOR EACH LINE IN THE BUFFER
@@ -99,6 +105,8 @@ public class ZpaGenerate extends DefaultCommand {
                     n.setColor("red");
                     // SET HIS TOTAL NUMBER OF POSTS
                     n.setPosts(Double.valueOf(splitUser[1]));
+                    // INCREMENT TOTAL ACTIVITY WITH THE POSTS MADE BY THIS USER
+                    totalActivity += n.getPosts();
                     // SET HIS TOTAL NUMBER OF THREADS
                     n.setThreads(Double.valueOf(splitUser[2]));
                     // CALCULATE USER'S Z-INDEX
@@ -111,112 +119,171 @@ public class ZpaGenerate extends DefaultCommand {
                     zpa.addVertex(n);
                     // ADD THIS USER TO THE LIST OF USERS
                     users.add(n);
-                    // FIXME: THIS I DO NOT REMEMBER FOR WHAT...
+                    // USED TO CALCULATE ACTIVITY STATS AND LEAVE THREADS() FREE FOR MANIPULATION
                     n.setZpaThreads(n.getThreads());
                     // CREATE ALL THE THREADS STARTED BY THIS USER
-                    int limit = (int) Math.floor(n.getThreads());
+                    int limit = (int) n.getThreads();
+                    // FOR EACH THREAD
                     for (int i = 0; i < limit; i++) {
+                        // CREATE THREAD
                         Node thread = new Node();
+                        // SET THREAD ID
                         thread.setId(threadCounter);
+                        // SET THREAD NAME
                         thread.setName("t" + threadCounter);
+                        // SET THREAD COLOR
                         thread.setColor("blue");
+                        // SET WHO STARTED THIS THREAD
                         thread.setStartedBy(n);
+                        // SET Z-INDEX OF THE THREAD - EQUALS THE Z-INDEX OF ITS STARTER
                         thread.setZindex(n.getZindex());
+                        // INCREMENT THREAD COUNTER
                         threadCounter++;
+                        // ADD THREAD TO THE NETWORK
                         zpa.addVertex(thread);
+                        // ADD THREAD TO THREADS LIST
                         threads.add(thread);
+                        // CREATE NEW EDGE
                         Edge e = new Edge();
+                        // SET USER AS STARTER
                         e.setFromid(n.getName());
+                        // SET THREAD AS TARGET
                         e.setToid(thread.getName());
+                        // ADD UNDIRECTED LINK TO THE NETWORK
                         zpa.addEdge(e, n, thread, EdgeType.UNDIRECTED);
-                        thread.setDegree(zpa.degree(thread));
-                        n.setThreads(n.getThreads() - 1);
+                        // SET INITIAL THREAD DEGREE TO 1 - THREAD IS CONNECTED ONLY TO ITS STARTER
+                        thread.setDegree(1.0);
+                        // DECREMENT NUMBER OF THREADS - BUT WHY?
+//                        n.setThreads(n.getThreads() - 1);
+                        // DECREMENT TOTAL NUMBER OF POSTS BY 1 - USER CONSUMES A POST TO START A THREAD
                         n.setPosts(n.getPosts() - 1);
+                        // USED TO CALCULATE POSTS ACTIVITY STATS AND LEAVE POSTS() FREE FOR MANIPULATION
                         n.setZpaPosts(n.getZpaPosts() + 1);
                     }
                 }
+                // CATCH EVENTUAL EXCEPTION
             } catch (IOException ex) {
+                // THROWS EXTENSION EXCEPTION WITH THE WHOLE ERROR STACK TRACE
                 throw new ExtensionException(ex);
             }
-            //
-            double totalActivity = 0;
-            for (Node n : users) {
-                totalActivity += n.getPosts();
-            }
             /**
-             * I do not model the amount of participation, but just how it is directed.
+             * *****************************************************************
+             * PLEASE NOTE: I DO NOT MODEL THE AMOUNT OF PARTICIPATION BUT JUST
+             * HOW IT IS DIRECTED AMONG THE AVAILABLE THREADS, WHICH ARE MAINLY
+             * OPENED INDEPENDENTLY FROM ONE ANOTHER.
+             * ****************************************************************
              */
-            // while users have posts to do
+            // WHILE USERS HAVE POSTS TO DO
             while (totalActivity > 0) {
-                // randomize
+                // FILTER USERS THAT HAVE POSTS TO DO
+                CollectionUtils.filter(users, new Predicate() {
+                    @Override
+                    public boolean evaluate(Object object) {
+                        return ((Node) object).getPosts() > 0;
+                    }
+                });
+                // RANDOMIZE AVAILABLE USERS' ORDER BEFORE ASKING EACH OF THEM
                 Collections.shuffle(users);
-                // users iterator
+                // MAKE A USERS ITERATOR
                 Iterator<Node> iterator = users.iterator();
-                // ask each user
+                // ASK EACH USER
                 while (iterator.hasNext()) {
-                    // this user
+                    // RETRIEVE THIS USER
                     Node n = iterator.next();
-                    // if this users has still a post to do
-                    if (n.getPosts() > 0) {
-                        // pick a thread according to how much this user finds a thread appealing
-                        Node t = selectAppealingThread(zpa, cntxt, n, threads, help_strength, threadSize);
-                        if (t != null) {
-                            //System.out.println("selected thread is " + t.getName());
-                            Edge e = new Edge();
-                            e.setFromid(n.getName());
-                            e.setToid(t.getName());
-                            zpa.addEdge(e, n, t, EdgeType.UNDIRECTED);
-                            t.setDegree(zpa.degree(t));
-                            n.setDegree(zpa.degree(n));
-                            n.setPosts(n.getPosts() - 1);
-                            n.setZpaPosts(n.getZpaPosts() + 1);
-                            ArrayList<Node> neiOfNei = n.getNeiOfNei();
-                            Collection<Node> twoDistNei = zpa.getNeighbors(t);
-                            Iterator<Node> twoDistNeiIter = twoDistNei.iterator();
-                            while (twoDistNeiIter.hasNext()) {
-                                Node next1 = twoDistNeiIter.next();
-                                if (!neiOfNei.contains(next1) && !next1.equals(n)) { // tra i miei vicini non ci sono io!!!
-                                    n.setNeiOfNei(next1);
-                                }
-                            }
-                            // decrement total activity
-                            totalActivity--;
+                    // FILTER THREADS WITH DEGREE <= THAN MAX EMPIRICAL VALUE
+                    CollectionUtils.filter(threads, new Predicate() {
+                        @Override
+                        public boolean evaluate(Object object) {
+                            return ((Node) object).getDegree() <= maxThreadSize;
                         }
-                        //}
+                    });
+                    // RANDOMIZE THREADS ORDER
+                    Collections.shuffle(threads);
+                    // SELECT AN APPEALING THREAD ACCORDING TO THIS USER'S FEATURES
+                    Node t = selectAppealingThread(zpa, cntxt, n, threads, help_strength);
+                    // IF A THREAD HAS BEEN FOUND
+                    if (t != null) {
+                        // MAKE NEW LINK
+                        Edge e = new Edge();
+                        // SET USER AS STARTER
+                        e.setFromid(n.getName());
+                        // SET THREAD AS TARGET
+                        e.setToid(t.getName());
+                        // ADD THIS UNDIRECTED LINK TO THE NETWORK
+                        zpa.addEdge(e, n, t, EdgeType.UNDIRECTED);
+                        // UPDATE THREAD DEGREE
+                        t.setDegree(zpa.degree(t));
+                        // UPDATE USER'S DEGREE
+                        n.setDegree(zpa.degree(n));
+                        // DECREMENT BY 1 USER'S AVAILABLE POSTS
+                        n.setPosts(n.getPosts() - 1);
+                        // FIXME: LOOKS LIKE IT'S HOW MANY POSTS THIS USER'S HAVE DONE
+                        n.setZpaPosts(n.getZpaPosts() + 1);
+                        // UPDATE USER'S 2-DIST NEI LIST
+                        ArrayList<Node> neiOfNei = n.getNeiOfNei();
+                        // RETRIEVE USERS CONNECTED TO THIS THREAD
+                        Collection<Node> usersNeiOfThread = zpa.getNeighbors(t);
+                        // MAKE ITERATOR 
+                        Iterator<Node> usersNeiOfThreadIter = usersNeiOfThread.iterator();
+                        // ASK EACH OF THE USERS NEI OF THE SELECTED THREAD
+                        while (usersNeiOfThreadIter.hasNext()) {
+                            // RETRIEVE A USER
+                            Node next1 = usersNeiOfThreadIter.next();
+                            // IF USER IS NOT YET IN MY 2-DIST NEI AND USER IS NOT ME
+                            if (!neiOfNei.contains(next1) && !next1.equals(n)) {
+                                // ADD USER TO MY 2-DIST NEI
+                                n.setNeiOfNei(next1);
+                            }
+                        }
+                        // DECREMENT TOTAL ACTIVITY BY ONE
+                        totalActivity--;
                     }
                 }
+                // RETRIEVE DATE
                 Date date = new Date();
+                // TERMINAL OUTPUT
                 System.out.println(totalActivity + " at time " + date.toString() + " after a round.");
             }
             /**
              * end zpa model procedure.
              */
-            // write activity file.
-            System.out.println("EXPERIMENT " + expp + " ACTIVITY ANALYSYS");
-            WriteStats.writeActivity(zpa, users, activityPath);
+            // RETRIEVE ALL NODES
+            Collection<Node> vertices = zpa.getVertices();
+            // CLEAN USERS LIST
+            users = new ArrayList<Node>();
+            // CLEAN THREADS LIST
+            threads = new ArrayList<Node>();
+            // ASK EACH NODE
+            for (Node n : vertices) {
+                // IF NODE IS A USER
+                if (n.getColor().equals("red")) {
+                    // ADD TO USERS LIST
+                    users.add(n);
+                } else {
+                    // ADD TO THREADS LIST
+                    threads.add(n);
+                }
+            }
+            // TERMINAL OUTPUT
             System.out.println("EXPERIMENT " + expp + " WRITE NETWORK");
+            // WRITE ZPA NETWORK TO FILE
             WriteStats.writeNetwork(zpa, networkPath);
+            // TERMINAL OUTPUT
             System.out.println("EXPERIMENT " + expp + " STATS");
-            WriteStats.writeBipartiteStats(zpa, users, threads, usersStatsPath, threadsStatsPath);
+            // WRITE STATS TO FILE
+            HashMap<Double, Collection<Node>> degreeDistr = WriteStats.writeBipartiteStats(zpa, users, threads, usersStatsPath, threadsStatsPath);
+            // TERMINAL OUTPUT
+            System.out.println("EXPERIMENT " + expp + " ACTIVITY ANALYSYS");
+            // WRITE ACTIVITY TO FILE
+            WriteStats.writeActivity(degreeDistr, users, activityPath);
+            // TERMINAL ACTIVITY
             System.out.println("EXPERIMENT " + expp + " DONE");
         }
+        // TERMINAL ACTIVITY
         System.out.println("ALL EXPERIMENTS DONE.");
     }
 
-    private Node selectAppealingThread(UndirectedSparseGraph<Node, Edge> zpa, Context cntxt, final Node n, ArrayList<Node> threads, double help_strength, double threadSize) {
-// un thread DEVE saltare fuori.
-// perchè l'utente ha fatto un post. Il punto è scegliere il thread migliore a seconda dell'utente.
-// il top sarebbe: grazie al parametro help_strength dosare quanto i big preferiscono i thread small
-// ipotesi - piccoli cercano aiuto, quindi parlano in thread piccoli
-// ipotesi - grandi offrono aiuto, quindi parlano in thread piccoli rispondendo a quelli sopra
-// ipotesi - grandi parlano con tutti, in conversazioni ad ampio respiro.
-// for each pair, calculate the difference (or absolute difference, or difference squared). 
-// then use that difference as weighting to select one pair. 
-// calculate cumulative probabilities
-// distance from my appeal and thread appeal
-// if distance is large, it means that I am facing a small thread and I am big, so the chance I post there is high in order to give help to a newbie
-// if distance is 0, then I am as big as the thread, thus I can post here no matter how
-// if distance is < 0, then thread is much bigger than me, and I do not have a chance to post there.
+    private Node selectAppealingThread(UndirectedSparseGraph<Node, Edge> zpa, Context cntxt, final Node n, ArrayList<Node> sampled, double help_strength) {
 
         // selected thread
         Node winner = null;
@@ -224,15 +291,6 @@ public class ZpaGenerate extends DefaultCommand {
         double cum = 0;
         // distances
         HashMap<Node, Double> distances = new HashMap<Node, Double>();
-        // array to hold sampled threads
-        ArrayList<Node> sampled = new ArrayList<Node>();
-        for (Node t : threads) {
-            if (t.getDegree() <= 100) { // 100 FOR MMORPG
-                sampled.add(t);
-            }
-        }
-        // randomize threads order!!! THIS WAS A HUGE MISSING!!!
-        Collections.shuffle(sampled);
         //sampler(threads, limit, cntxt, zpa, threadSize);
         // if help_strength is high then this behavior is encouraged - bigs help small
         if (cntxt.getRNG().nextDouble() <= help_strength) {
@@ -390,8 +448,6 @@ public class ZpaGenerate extends DefaultCommand {
         }
         return winner;
     }
-
-
 
     private ArrayList<Node> sampler(ArrayList<Node> threads, int limit, Context cntxt, UndirectedSparseGraph<Node, Edge> zpa, double threadSize) {
 
