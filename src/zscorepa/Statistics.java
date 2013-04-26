@@ -51,7 +51,7 @@ public class Statistics extends DefaultCommand {
         String forum = argmnts[0].getString();
         String empiricalPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/_bipartite_networks/" + forum + "-empirical.txt";
         String attributesPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/_network_attributes/" + forum + "-empirical-attributes.txt";
-        
+
         String usersDegreeDistribution = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/_degrees_empiric_networks/users-degree-" + forum + "-empirical.txt";
         String threadsDegreeDistribution = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/_degrees_empiric_networks/threads-degree-" + forum + "-empirical.txt";
         String usersStatsPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/EXPERIMENTS/" + forum + "/users-stats-" + forum + "-empirical.txt";
@@ -164,10 +164,32 @@ public class Statistics extends DefaultCommand {
         System.out.println("EMPIRICAL WRITE DEGREE DISTRIBUTION");
         WriteStats.writeDegreeDistribution(g, usersLcc, usersDegreeDistribution);
         WriteStats.writeDegreeDistribution(g, threadsLcc, threadsDegreeDistribution);
-        System.out.println("EMPIRICAL WRITE STATS");
-        HashMap<Double, Collection<Node>> degreeDistr = WriteStats.writeBipartiteStats(g, users, threads, usersStatsPath, threadsStatsPath);
+
+        // TERMINAL OUTPUT
+        System.out.println("CALCULATE STATS FOR EACH NODES");
+        // CALCULATE STATS FOR EACH NODES
+        WriteStats.findValues(g);
+        // TERMINAL OUTPUT
+        System.out.println("FIND USERS DEGREE DISTRIBUTION");
+        // FIND USERS DEGREE DISTRIBUTION
+        HashMap<Double, Collection<Node>> usersDegreeDistr = WriteStats.findDegreeDistribution(users);
+        // TERMINAL OUTPUT
+        System.out.println("WRITE USERS STATS TO FILE");
+        // WRITE USERS STATS TO FILE
+        WriteStats.writeBipartiteStats(g, usersDegreeDistr, users.size(), usersStatsPath);
+        // TERMINAL OUTPUT
+        System.out.println("FIND THREADS DEGREE DISTRIBUTION");
+        // FIND THREADS DEGREE DISTRIBUTION
+        HashMap<Double, Collection<Node>> threadsDegreeDistr = WriteStats.findDegreeDistribution(threads);
+        // TERMINAL OUTPUT
+        System.out.println("WRITE THREADS STATS TO FILE");
+        // WRITE USERS STATS TO FILE
+        WriteStats.writeBipartiteStats(g, threadsDegreeDistr, threads.size(), threadsStatsPath);
+        // TERMINAL OUTPUT
         System.out.println("EMPIRICAL ACTIVITY ANALYSYS");
-        WriteStats.writeActivity(degreeDistr, users, activityPath);
+        // WRITE ACTIVITY TO FILE
+        WriteStats.writeActivity(usersDegreeDistr, users, activityPath);
+        // TERMINAL ACTIVITY
         System.out.println("EMPIRICAL ANALYSIS DONE");
     }
 

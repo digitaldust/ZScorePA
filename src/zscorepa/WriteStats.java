@@ -80,33 +80,6 @@ public class WriteStats {
             throw new ExtensionException(e);
         }
     }
-    
-    static HashMap<Double, Collection<Node>> writeBipartiteStats(UndirectedSparseGraph<Node, Edge> g, ArrayList<Node> users, ArrayList<Node> threads, String usersStatsPath, String threadsStatsPath) throws ExtensionException {
-
-        // export the degree of the empirical analyzed - if an empirical network has been analyzed
-        // why do I remove isolates? because the procedure for generating a random bipartite network
-        // starts by creating as many nodes as the empirical - but much of these nodes are dropped when we come
-        // to the LCC or, in the MMORPG case, are simply users who joined the forum but never posted.
-        ArrayList<Node> removeUs = new ArrayList<Node>();
-        for (Iterator<Node> it = g.getVertices().iterator(); it.hasNext();) {
-            Node n = it.next();
-            if (g.degree(n) == 0) {
-                removeUs.add(n);
-            }
-        }
-        for (Iterator<Node> it = removeUs.iterator(); it.hasNext();) {
-            Node r = it.next();
-            g.removeVertex(r);
-            users.remove(r);
-            threads.remove(r);
-        }
-        // calculate values
-        findValues(g);
-        // save values to file
-        HashMap<Double, Collection<Node>> degree = storeResults(users, usersStatsPath);
-        storeResults(threads, threadsStatsPath);
-        return degree;
-    }
 
     /**
      * Find mean of values.
@@ -126,24 +99,7 @@ public class WriteStats {
     /**
      * store results
      */
-    private static HashMap<Double, Collection<Node>> storeResults(Collection<Node> nodes, String fileName) throws ExtensionException {
-        //
-        HashMap<Double, Collection<Node>> degree = new HashMap<Double, Collection<Node>>();
-        // store an array of nodes for each degree found in the network
-        Iterator<Node> degreeIter = nodes.iterator();
-        while (degreeIter.hasNext()) {
-            Node ego = degreeIter.next();
-            double deg = ego.getDegree();
-            if (degree.containsKey(deg)) {
-                Collection<Node> nodeWithDegree = degree.get(deg);
-                nodeWithDegree.add(ego);
-                degree.put(deg, nodeWithDegree);
-            } else {
-                ArrayList<Node> nodeWithDegree = new ArrayList<Node>();
-                nodeWithDegree.add(ego);
-                degree.put(deg, nodeWithDegree);
-            }
-        }
+    static void writeBipartiteStats(UndirectedSparseGraph<Node, Edge> g, HashMap<Double, Collection<Node>> degree, int size, String statsPath) throws ExtensionException {
         //
         HashMap<Double, Double> dd_hash = new HashMap<Double, Double>();
         HashMap<Double, Double> red_hash = new HashMap<Double, Double>();
@@ -175,7 +131,7 @@ public class WriteStats {
                 clustLowDot.add((double) caller.getClustLowDot());
                 clustTopDot.add((double) caller.getClustTopDot());
             }
-            dd_hash.put(key, ((double) nodesWithDegree.size() / (double) nodes.size()));
+            dd_hash.put(key, ((double) nodesWithDegree.size() / (double) size));
             nei_deg_hash.put(key, mean(neiDeg));
             two_dist_hash.put(key, mean(twoDistNei));
             red_hash.put(key, mean(redundancy));
@@ -185,7 +141,7 @@ public class WriteStats {
         }
         // write results to file
         try {
-            BufferedWriter out = new BufferedWriter(new FileWriter(fileName, false));
+            BufferedWriter out = new BufferedWriter(new FileWriter(statsPath, false));
             out.append("degree\t" + "degree distr\t" + "nei_deg\t" + "2-dist-nei\t" + "redundancy\t" + "clustDot\t" + "clustLowDot\t" + "clustTopDot\n");
             Set<Double> keySet = dd_hash.keySet();
             Object[] toArray = keySet.toArray();
@@ -201,7 +157,6 @@ public class WriteStats {
         } catch (IOException e) {
             throw new ExtensionException(e);
         }
-        return degree;
     }
 
     // find how many commons nei two nodes in the same partition have
@@ -285,7 +240,7 @@ public class WriteStats {
     }
 
     // find
-    private static void findValues(UndirectedSparseGraph<Node, Edge> g) {
+    static void findValues(UndirectedSparseGraph<Node, Edge> g) {
         /**
          * find bipartite sna measures
          */
@@ -407,5 +362,25 @@ public class WriteStats {
         } catch (IOException e) {
             throw new ExtensionException(e);
         }
+    }
+    
+    static HashMap<Double, Collection<Node>> findDegreeDistribution(ArrayList<Node> nodes) {
+        HashMap<Double, Collection<Node>> degree = new HashMap<Double, Collection<Node>>();
+        // store an array of nodes for each degree found in the network
+        Iterator<Node> degreeIter = nodes.iterator();
+        while (degreeIter.hasNext()) {
+            Node ego = degreeIter.next();
+            double deg = ego.getDegree();
+            if (degree.containsKey(deg)) {
+                Collection<Node> nodeWithDegree = degree.get(deg);
+                nodeWithDegree.add(ego);
+                degree.put(deg, nodeWithDegree);
+            } else {
+                ArrayList<Node> nodeWithDegree = new ArrayList<Node>();
+                nodeWithDegree.add(ego);
+                degree.put(deg, nodeWithDegree);
+            }
+        }
+        return degree;
     }
 }

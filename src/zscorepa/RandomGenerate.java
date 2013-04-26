@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import org.nlogo.api.Argument;
 import org.nlogo.api.Context;
@@ -179,12 +180,33 @@ public class RandomGenerate extends DefaultCommand {
                     threads.add(n);
                 }
             }
+            // TERMINAL OUTPUT
             System.out.println("EXPERIMENT " + expp + " WRITE NETWORK");
-            // write random generated network to file
+            // WRITE ZPA NETWORK TO FILE
             WriteStats.writeNetwork(rand, networkPath);
+            // TERMINAL OUTPUT
+            System.out.println("CALCULATE STATS FOR EACH NODES");
+            // CALCULATE STATS FOR EACH NODES
+            WriteStats.findValues(rand);
+            // TERMINAL OUTPUT
             System.out.println("EXPERIMENT " + expp + " STATS");
-            // write statistics
-            WriteStats.writeBipartiteStats(rand, users, threads, usersStatsPath, threadsStatsPath);
+            // TERMINAL OUTPUT
+            System.out.println("FIND USERS DEGREE DISTRIBUTION");
+            // FIND USERS DEGREE DISTRIBUTION
+            HashMap<Double, Collection<Node>> usersDegreeDistr = WriteStats.findDegreeDistribution(users);
+            // TERMINAL OUTPUT
+            System.out.println("WRITE USERS STATS TO FILE");
+            // WRITE USERS STATS TO FILE
+            WriteStats.writeBipartiteStats(rand, usersDegreeDistr, users.size(), usersStatsPath);
+            // TERMINAL OUTPUT
+            System.out.println("FIND THREADS DEGREE DISTRIBUTION");
+            // FIND THREADS DEGREE DISTRIBUTION
+            HashMap<Double, Collection<Node>> threadsDegreeDistr = WriteStats.findDegreeDistribution(threads);
+            // TERMINAL OUTPUT
+            System.out.println("WRITE THREADS STATS TO FILE");
+            // WRITE USERS STATS TO FILE
+            WriteStats.writeBipartiteStats(rand, threadsDegreeDistr, threads.size(), threadsStatsPath);
+            // TERMINAL ACTIVITY
             System.out.println("EXPERIMENT " + expp + " DONE");
         }
         System.out.println("ALL EXPERIMENTS DONE.");

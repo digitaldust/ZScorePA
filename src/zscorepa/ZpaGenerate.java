@@ -190,6 +190,8 @@ public class ZpaGenerate extends DefaultCommand {
                 Collections.shuffle(users);
                 // MAKE A USERS ITERATOR
                 Iterator<Node> iterator = users.iterator();
+                // 
+                double maxThreadDeg = 0.0;
                 // ASK EACH USER
                 while (iterator.hasNext()) {
                     // RETRIEVE THIS USER
@@ -204,7 +206,7 @@ public class ZpaGenerate extends DefaultCommand {
                     // RANDOMIZE THREADS ORDER
                     Collections.shuffle(threads);
                     // SELECT AN APPEALING THREAD ACCORDING TO THIS USER'S FEATURES
-                    Node t = selectAppealingThread(zpa, cntxt, n, threads, help_strength);
+                    Node t = selectAppealingThread(zpa, cntxt, n, threads, help_strength, maxThreadDeg);
                     // IF A THREAD HAS BEEN FOUND
                     if (t != null) {
                         // MAKE NEW LINK
@@ -217,6 +219,11 @@ public class ZpaGenerate extends DefaultCommand {
                         zpa.addEdge(e, n, t, EdgeType.UNDIRECTED);
                         // UPDATE THREAD DEGREE
                         t.setDegree(zpa.degree(t));
+                        // find max degree
+                        if(t.getDegree()>maxThreadDeg){
+                            maxThreadDeg = t.getDegree();
+                        }
+                         
                         // UPDATE USER'S DEGREE
                         n.setDegree(zpa.degree(n));
                         // DECREMENT BY 1 USER'S AVAILABLE POSTS
@@ -273,13 +280,31 @@ public class ZpaGenerate extends DefaultCommand {
             // WRITE ZPA NETWORK TO FILE
             WriteStats.writeNetwork(zpa, networkPath);
             // TERMINAL OUTPUT
+            System.out.println("CALCULATE STATS FOR EACH NODES");
+            // CALCULATE STATS FOR EACH NODES
+            WriteStats.findValues(zpa);
+            // TERMINAL OUTPUT
             System.out.println("EXPERIMENT " + expp + " STATS");
-            // WRITE STATS TO FILE
-            HashMap<Double, Collection<Node>> degreeDistr = WriteStats.writeBipartiteStats(zpa, users, threads, usersStatsPath, threadsStatsPath);
+            // TERMINAL OUTPUT
+            System.out.println("FIND USERS DEGREE DISTRIBUTION");
+            // FIND USERS DEGREE DISTRIBUTION
+            HashMap<Double, Collection<Node>> usersDegreeDistr = WriteStats.findDegreeDistribution(users);
+            // TERMINAL OUTPUT
+            System.out.println("WRITE USERS STATS TO FILE");
+            // WRITE USERS STATS TO FILE
+            WriteStats.writeBipartiteStats(zpa, usersDegreeDistr, users.size(), usersStatsPath);
+            // TERMINAL OUTPUT
+            System.out.println("FIND THREADS DEGREE DISTRIBUTION");
+            // FIND THREADS DEGREE DISTRIBUTION
+            HashMap<Double, Collection<Node>> threadsDegreeDistr = WriteStats.findDegreeDistribution(threads);
+            // TERMINAL OUTPUT
+            System.out.println("WRITE THREADS STATS TO FILE");
+            // WRITE USERS STATS TO FILE
+            WriteStats.writeBipartiteStats(zpa, threadsDegreeDistr, threads.size(), threadsStatsPath);
             // TERMINAL OUTPUT
             System.out.println("EXPERIMENT " + expp + " ACTIVITY ANALYSYS");
             // WRITE ACTIVITY TO FILE
-            WriteStats.writeActivity(degreeDistr, users, activityPath);
+            WriteStats.writeActivity(usersDegreeDistr, users, activityPath);
             // TERMINAL ACTIVITY
             System.out.println("EXPERIMENT " + expp + " DONE");
         }
@@ -287,7 +312,7 @@ public class ZpaGenerate extends DefaultCommand {
         System.out.println("ALL EXPERIMENTS DONE.");
     }
 
-    private Node selectAppealingThread(UndirectedSparseGraph<Node, Edge> zpa, Context cntxt, Node n, ArrayList<Node> threads, double help_strength) {
+    private Node selectAppealingThread(UndirectedSparseGraph<Node, Edge> zpa, Context cntxt, Node n, ArrayList<Node> threads, double help_strength, double maxThreadDeg) {
 
         // INITIALIZE WINNER THREAD TO NULL
         Node winner = null;
@@ -307,17 +332,17 @@ public class ZpaGenerate extends DefaultCommand {
                 // RETRIEVE THIS THREAD
                 Node aThread = threadsIter.next();
                 // FIND THIS THREAD PROBABILITY TO GET CHOSEN 
-                double dist = (n.getZindex() - aThread.getZindex());
+                double dist = Math.abs(n.getZindex() - aThread.getZindex()) * 10;
                 // IF PROB LESS THAN ZERO
-                if (dist < 0) {
-                    // SET TO ZERO
-                    dist = 0;
-                }
+//                if (dist <= 0) {
+//                    // SET TO ZERO
+//                    dist = 0;
+//                }
                 // IF USER HAS ALREADY COMMENTED ON THIS THREAD
                 if (userNei.contains(aThread)) {
-                    // IT IS LESS PROBABLE THAT HE WILL POST AGAIN
-                    dist /= 2;
-                } 
+                    // IT IS LESS PROBABLE THAT USER WILL POST AGAIN
+                    dist *= cntxt.getRNG().nextDouble();
+                }
                 // SET THIS THREAD PROBABILITY TO GET CHOSEN
                 aThread.setZpaProb(dist);
                 // INCREMENT LOTTERY BUCKET
@@ -329,7 +354,7 @@ public class ZpaGenerate extends DefaultCommand {
              * USER TRIES TO MEET WITH HIS BUDDIES TO CHAT.
              */
             // SAMPLE TO SPEED UP MODEL
-            ArrayList<Node> sampled = sampling(400, cntxt, threads);
+            ArrayList<Node> sampled = sampling(100, cntxt, threads);
             // RETRIEVE MY 2-DIST NEIGHBORS
             ArrayList<Node> twoDistUsers = n.getNeiOfNei();
             // MAKE ITERATOR FOR THREADS LIST
@@ -341,20 +366,20 @@ public class ZpaGenerate extends DefaultCommand {
                 // USERS CONNECTED TO THIS THREAD
                 Collection<Node> threadsNei = zpa.getNeighbors(aThread);
                 // FIND THIS THREAD PROBABILITY TO GET CHOSEN 
-                double dist;
+                double dist = maxThreadDeg - aThread.getDegree();
                 // CHECK IF SOME USERS OF THIS THREAD ARE ALREADY IN MY 2-DIST NEI
                 // IF NO USERS IS IN MY 2-DIST NEI LIST
                 if (Collections.disjoint(twoDistUsers, threadsNei)) {
                     // THIS THREAD PROB IS LINKED TO THREAD IMPORTANCE
                     // WHICH CAN BE PROXIED BY ITS DEGREE
-                    dist = aThread.getDegree() * cntxt.getRNG().nextDouble();
-                // ELSE IF AT LEAST ONE USER IS ALREADY IN MY 2-DIST NEI
+                    dist *= cntxt.getRNG().nextDouble(); // alzo la prob
                 } else {
-                    // THIS THREAD PROB IS INFLUENCED BY MY FRIENDS HERE AND BY THREAD IMPORTANCE
-                    dist = aThread.getDegree();
+                    dist *= Math.abs(aThread.getDegree() - n.getDegree());
                 }
-                // END ADDED NOW
-//                double value = (double) cntxt.getRNG().nextInt((int) me);
+                //
+                if(dist <= 0){
+                    dist = 1;
+                }
                 // SET THIS THREAD PROBABILITY TO GET CHOSEN
                 aThread.setZpaProb(dist);
                 // INCREMENT LOTTERY BUCKET
@@ -403,4 +428,6 @@ public class ZpaGenerate extends DefaultCommand {
         }
         return winners;
     }
+
+    
 }
