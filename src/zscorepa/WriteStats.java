@@ -297,7 +297,7 @@ public class WriteStats {
                 }
             }
             // set degree of caller
-            ego.setDegree((double) g.degree(ego));
+            ego.setDegree((double) g.degree(ego)); // QUESTO CI DOVREBBE GIà ESSERE PER USERS E THREADS
             // set ego's list of degree of neighbors
             ego.setNeiDeg(egoNeiDeg);
             // set ego's list of unique 2-dist-nei - corresponds to degree in the projection.
@@ -307,7 +307,7 @@ public class WriteStats {
             if (egoNei.size() > 1) {
                 ego.setRedundancy((double) (num / ((egoNei.size() * (egoNei.size() - 1)) / 2)));
             } else {
-                ego.setRedundancy((double) 0);
+                ego.setRedundancy((double) 0.05);
             }
             // set ego's clustering dot, lowDot and topDot
             double numclust = 0;
