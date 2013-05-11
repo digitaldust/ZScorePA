@@ -1,4 +1,4 @@
-package zscorepa;
+package org.nlogo.extensions.zscorepa;
 
 import edu.uci.ics.jung.graph.UndirectedSparseGraph;
 import java.io.BufferedWriter;
@@ -18,7 +18,7 @@ import org.nlogo.api.ExtensionException;
  */
 public class WriteStats {
 
-    static void writeActivity(HashMap<Double, Collection<Node>> degree, ArrayList<Node> users, String activityPath) throws ExtensionException {
+    static void writeActivity(HashMap<Double, Collection<Node>> degree, String activityPath) throws ExtensionException {
         
         // calculate average posts, thread and zindex activity for each degree
         HashMap<Double, Double> posts_hash = new HashMap<Double, Double>();
@@ -35,9 +35,9 @@ public class WriteStats {
             Collection<Node> nodesWithDegree = degree.get(key);
             Iterator<Node> nodesWithDegreeIter = nodesWithDegree.iterator();
             while (nodesWithDegreeIter.hasNext()) {
-                Node caller = nodesWithDegreeIter.next();
-                postsDeg.add(caller.getZpaPosts());
-                threadsDeg.add(caller.getZpaThreads());
+                User caller = (User)nodesWithDegreeIter.next();
+                postsDeg.add(caller.getPostsDone());
+                threadsDeg.add(caller.getThreadsDone());
                 zindexDeg.add(caller.getZindex());
             }
             posts_hash.put(key, mean(postsDeg));

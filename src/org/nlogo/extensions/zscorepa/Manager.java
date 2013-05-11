@@ -1,4 +1,4 @@
-package zscorepa;
+package org.nlogo.extensions.zscorepa;
 
 import org.nlogo.api.DefaultClassManager;
 import org.nlogo.api.ExtensionException;
@@ -8,7 +8,7 @@ import org.nlogo.api.PrimitiveManager;
  *
  * @author Simone Gabbriellini
  */
-public class zscorepa extends DefaultClassManager {
+public class Manager extends DefaultClassManager {
     
     @Override
     public void load(PrimitiveManager pm) throws ExtensionException {

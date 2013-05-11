@@ -1,8 +1,4 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package zscorepa;
+package org.nlogo.extensions.zscorepa;
 
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.UndirectedSparseGraph;
@@ -115,10 +111,7 @@ public class RandomGenerate extends DefaultCommand {
                 while (totalLinks > 0) {
                     Node u = users.get(cntxt.getRNG().nextInt(users.size()));
                     Node t = extractRandom(threads, u, cntxt, rand);
-                    Edge randomEdge = new Edge();
-                    randomEdge.setFromid(u.getName());
-                    randomEdge.setToid(t.getName());
-                    rand.addEdge(randomEdge, u, t, EdgeType.UNDIRECTED);
+                    rand.addEdge(new Edge(u,t), u, t, EdgeType.UNDIRECTED);
                     totalLinks--;
                 }
             } else {
@@ -145,10 +138,7 @@ public class RandomGenerate extends DefaultCommand {
                         Iterator<Node> iterator = someThreads.iterator();
                         while (iterator.hasNext()) {
                             Node thread = iterator.next();
-                            Edge randomEdge = new Edge();
-                            randomEdge.setFromid(user.getName());
-                            randomEdge.setToid(thread.getName());
-                            rand.addEdge(randomEdge, user, thread, EdgeType.UNDIRECTED);
+                            rand.addEdge(new Edge(user, thread), user, thread, EdgeType.UNDIRECTED);
                             totalLinks--;
                             //System.out.println("users is " + user.getId() + " has degree " + rand.degree(user) + " and should be " + user.getDegree());
                             // check if reusable

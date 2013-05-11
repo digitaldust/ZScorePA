@@ -2,16 +2,16 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package zscorepa;
+package org.nlogo.extensions.zscorepa;
 
 import java.util.ArrayList;
 import java.util.Set;
 
 /**
- *
- * @author ogabbrie
+ * 
+ * @author Simone Gabbriellini
  */
-public class Node {
+public class Node implements NodeInterface {
     private int id;
     private String name;
     private String color;
@@ -20,22 +20,16 @@ public class Node {
     private double clustLowDot;
     private double clustTopDot;
     private double redundancy;
-    private Set<Node> twoDistNei;
-    private ArrayList<Double> neiDeg;
-    private double posts;
-    private double threads;
     private double zindex;
-    private double cumProbZ;
-    private Node startedBy;
-    private double zpaPosts;
-    private double zpaThreads;
-    private double zpaZindex;
-    private ArrayList<Node> neiOfNei;
-    private double zpaProb;
+    private ArrayList<Node> nei;
+    private Set<Node> twoDistNei;
+    private Set<Node> neiOfNei;
+    private ArrayList<Double> neiDeg;
 
     /**
      * @return the node
      */
+    @Override
     public int getId() {
         return id;
     }
@@ -43,12 +37,14 @@ public class Node {
     /**
      * @param node the node to set
      */
+    @Override
     public void setId(int id) {
         this.id = id;
     }
     /**
      * @return the node
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -56,6 +52,7 @@ public class Node {
     /**
      * @param node the node to set
      */
+    @Override
     public void setName(String name) {
         this.name = name;
     }
@@ -64,6 +61,7 @@ public class Node {
     /**
      * @return the color
      */
+    @Override
     public String getColor() {
         return color;
     }
@@ -71,6 +69,7 @@ public class Node {
     /**
      * @param color the color to set
      */
+    @Override
     public void setColor(String color) {
         this.color = color;
     }
@@ -78,6 +77,7 @@ public class Node {
     /**
      * @return the degree
      */
+    @Override
     public double getDegree() {
         return degree;
     }
@@ -85,6 +85,7 @@ public class Node {
     /**
      * @param degree the degree to set
      */
+    @Override
     public void setDegree(double degree) {
         this.degree = degree;
     }    
@@ -92,6 +93,7 @@ public class Node {
     /**
      * @return the redundancy
      */
+    @Override
     public double getRedundancy() {
         return redundancy;
     }
@@ -99,22 +101,129 @@ public class Node {
     /**
      * @param redundancy the redundancy to set
      */
+    @Override
     public void setRedundancy(double redundancy) {
         this.redundancy = redundancy;
     }
 
     /**
-     * @return the twoDistNei
+     * @return the neiDeg
      */
+    @Override
+    public ArrayList<Node> getNei() {
+        return nei;
+    }
+
+    /**
+     * @param neiDeg the neiDeg to set
+     */
+    @Override
+    public void setNei(Node aNei) {
+        this.nei.add(aNei);
+    }
+    
+    @Override
+    public void initializeNei(){
+        this.nei = new ArrayList<Node>();
+    }
+    /**
+     * @return the clustDot
+     */
+    @Override
+    public double getClustDot() {
+        return clustDot;
+    }
+
+    /**
+     * @param clustDot the clustDot to set
+     */
+    @Override
+    public void setClustDot(double clustDot) {
+        this.clustDot = clustDot;
+    }
+
+    /**
+     * @return the clustLowDot
+     */
+    @Override
+    public double getClustLowDot() {
+        return clustLowDot;
+    }
+
+    /**
+     * @param clustLowDot the clustLowDot to set
+     */
+    @Override
+    public void setClustLowDot(double clustLowDot) {
+        this.clustLowDot = clustLowDot;
+    }
+
+    /**
+     * @return the clustTopDot
+     */
+    @Override
+    public double getClustTopDot() {
+        return clustTopDot;
+    }
+
+    /**
+     * @param clustTopDot the clustTopDot to set
+     */
+    @Override
+    public void setClustTopDot(double clustTopDot) {
+        this.clustTopDot = clustTopDot;
+    }
+
+
+    /**
+     * @return the neiOfNei
+     */
+    
+    @Override
     public Set<Node> getTwoDistNei() {
         return twoDistNei;
     }
 
     /**
-     * @param twoDistNei the twoDistNei to set
+     * @param neiOfNei the neiOfNei to set
      */
-    public void setTwoDistNei(Set<Node> twoDistNei) {
-        this.twoDistNei = twoDistNei;
+    @Override
+    public void setTwoDistNei(Set<Node> aTwoDistNei) {
+        this.twoDistNei = aTwoDistNei;
+    }
+    
+    public void setAllTwoDistNei(Set<Node> aTwoDistNei) {
+        this.twoDistNei = aTwoDistNei;
+    }
+    
+    /**
+     * @return the zindex
+     */
+    @Override
+    public double getZindex() {
+        return zindex;
+    }
+
+    /**
+     * @param zindex the zindex to set
+     */
+    @Override
+    public void setZindex(double zindex) {
+        this.zindex = zindex;
+    }
+
+    /**
+     * @return the neiOfNei
+     */
+    public Set<Node> getNeiOfNei() {
+        return neiOfNei;
+    }
+
+    /**
+     * @param neiOfNei the neiOfNei to set
+     */
+    public void setNeiOfNei(Set<Node> neiOfNei) {
+        this.neiOfNei = neiOfNei;
     }
 
     /**
@@ -130,191 +239,4 @@ public class Node {
     public void setNeiDeg(ArrayList<Double> neiDeg) {
         this.neiDeg = neiDeg;
     }
-
-    /**
-     * @return the clustDot
-     */
-    public double getClustDot() {
-        return clustDot;
-    }
-
-    /**
-     * @param clustDot the clustDot to set
-     */
-    public void setClustDot(double clustDot) {
-        this.clustDot = clustDot;
-    }
-
-    /**
-     * @return the clustLowDot
-     */
-    public double getClustLowDot() {
-        return clustLowDot;
-    }
-
-    /**
-     * @param clustLowDot the clustLowDot to set
-     */
-    public void setClustLowDot(double clustLowDot) {
-        this.clustLowDot = clustLowDot;
-    }
-
-    /**
-     * @return the clustTopDot
-     */
-    public double getClustTopDot() {
-        return clustTopDot;
-    }
-
-    /**
-     * @param clustTopDot the clustTopDot to set
-     */
-    public void setClustTopDot(double clustTopDot) {
-        this.clustTopDot = clustTopDot;
-    }
-
-    /**
-     * @return the posts
-     */
-    public double getPosts() {
-        return posts;
-    }
-
-    /**
-     * @param posts the posts to set
-     */
-    public void setPosts(double posts) {
-        this.posts = posts;
-    }
-
-    /**
-     * @return the threads
-     */
-    public double getThreads() {
-        return threads;
-    }
-
-    /**
-     * @param threads the threads to set
-     */
-    public void setThreads(double threads) {
-        this.threads = threads;
-    }
-
-    /**
-     * @return the zindex
-     */
-    public double getZindex() {
-        return zindex;
-    }
-
-    /**
-     * @param zindex the zindex to set
-     */
-    public void setZindex(double zindex) {
-        this.zindex = zindex;
-    }
-
-    /**
-     * @return the cumProbZ
-     */
-    public double getCumProbZ() {
-        return cumProbZ;
-    }
-
-    /**
-     * @param cumProbZ the cumProbZ to set
-     */
-    public void setCumProbZ(double cumProbZ) {
-        this.cumProbZ = cumProbZ;
-    }
-
-    /**
-     * @return the startedBy
-     */
-    public Node getStartedBy() {
-        return startedBy;
-    }
-
-    /**
-     * @param startedBy the startedBy to set
-     */
-    public void setStartedBy(Node startedBy) {
-        this.startedBy = startedBy;
-    }
-
-    /**
-     * @return the zpaPosts
-     */
-    public double getZpaPosts() {
-        return zpaPosts;
-    }
-
-    /**
-     * @param zpaPosts the zpaPosts to set
-     */
-    public void setZpaPosts(double zpaPosts) {
-        this.zpaPosts = zpaPosts;
-    }
-
-    /**
-     * @return the zpaThreads
-     */
-    public double getZpaThreads() {
-        return zpaThreads;
-    }
-
-    /**
-     * @param zpaThreads the zpaThreads to set
-     */
-    public void setZpaThreads(double zpaThreads) {
-        this.zpaThreads = zpaThreads;
-    }
-
-    /**
-     * @return the zpaZindex
-     */
-    public double getZpaZindex() {
-        return zpaZindex;
-    }
-
-    /**
-     * @param zpaZindex the zpaZindex to set
-     */
-    public void setZpaZindex(double zpaZindex) {
-        this.zpaZindex = zpaZindex;
-    }
-
-    /**
-     * @return the neiOfNei
-     */
-    public ArrayList<Node> getNeiOfNei() {
-        return neiOfNei;
-    }
-
-    /**
-     * @param neiOfNei the neiOfNei to set
-     */
-    public void setNeiOfNei(Node aNeiOfNei) {
-        this.neiOfNei.add(aNeiOfNei);
-    }
-    
-    public void initializeNeiOfNei(){
-        this.neiOfNei = new ArrayList<Node>();
-    }
-
-    /**
-     * @return the ZpaProb
-     */
-    public double getZpaProb() {
-        return zpaProb;
-    }
-
-    /**
-     * @param ZpaProb the ZpaProb to set
-     */
-    public void setZpaProb(double zpaProb) {
-        this.zpaProb = zpaProb;
-    }
-    
 }

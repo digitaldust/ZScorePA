@@ -2,17 +2,20 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package zscorepa;
+package org.nlogo.extensions.zscorepa;
 
 /**
  *
  * @author ogabbrie
  */
 public class Edge {
-    private int id;
     private String fromid;
     private String toid;
-    private String color;
+    
+    public Edge(Node user, Node thread){
+        this.fromid = user.getName();
+        this.toid = thread.getName();
+    }
     /**
      * @return the fromid
      */
@@ -39,34 +42,6 @@ public class Edge {
      */
     public void setToid(String toid) {
         this.toid = toid;
-    }
-
-    /**
-     * @return the color
-     */
-    public String getColor() {
-        return color;
-    }
-
-    /**
-     * @param color the color to set
-     */
-    public void setColor(String color) {
-        this.color = color;
-    }
-
-    /**
-     * @return the id
-     */
-    public int getId() {
-        return id;
-    }
-
-    /**
-     * @param id the id to set
-     */
-    public void setId(int id) {
-        this.id = id;
     }
     
 }

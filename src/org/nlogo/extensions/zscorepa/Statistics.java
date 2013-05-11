@@ -1,4 +1,4 @@
-package zscorepa;
+package org.nlogo.extensions.zscorepa;
 
 import edu.uci.ics.jung.algorithms.cluster.WeakComponentClusterer;
 import edu.uci.ics.jung.algorithms.filters.FilterUtils;
@@ -65,7 +65,6 @@ public class Statistics extends DefaultCommand {
         try {
             BufferedReader in = new BufferedReader(new FileReader(empiricalPath));
             String line;
-            int i = 0;
             System.out.println("g has " + g.getVertexCount() + " vertici");
             System.out.println("g has " + g.getEdgeCount() + " links");
             while ((line = in.readLine()) != null) {
@@ -93,12 +92,7 @@ public class Statistics extends DefaultCommand {
                     thread = retrieveNode(split[1], threads);
                 }
                 // add edge between user and thread
-                Edge edge = new Edge();
-                edge.setId(i);
-                edge.setFromid(user.getName());
-                edge.setToid(thread.getName());
-                g.addEdge(edge, user, thread, EdgeType.UNDIRECTED);
-                i++;
+                g.addEdge(new Edge(user, thread), user, thread, EdgeType.UNDIRECTED);
             }
             in.close();
             System.out.println("g has " + g.getVertexCount() + " vertici");
@@ -141,11 +135,12 @@ public class Statistics extends DefaultCommand {
             String attr;
             while ((attr = attributeFile.readLine()) != null) {
                 final String[] splitUser = attr.split(",");
-                for (Node n : usersLcc) {
+                for (Node u : usersLcc) {
+                    User n = (User)u;
                     if (n.getName().equals(splitUser[0])) {
-                        n.setZpaPosts(Double.valueOf(splitUser[1]));
-                        n.setZpaThreads(Double.valueOf(splitUser[2]));
-                        double zindex = (n.getZpaPosts() - n.getZpaThreads()) / Math.sqrt(n.getZpaPosts() + n.getZpaThreads());
+                        n.setPostsDone(Double.valueOf(splitUser[1]));
+                        n.setThreadsDone(Double.valueOf(splitUser[2]));
+                        double zindex = (n.getPostsDone() - n.getThreadsDone()) / Math.sqrt(n.getPostsDone() + n.getThreadsDone());
                         n.setZindex(Double.valueOf(zindex));
                     }
                 }
@@ -188,7 +183,7 @@ public class Statistics extends DefaultCommand {
         // TERMINAL OUTPUT
         System.out.println("EMPIRICAL ACTIVITY ANALYSYS");
         // WRITE ACTIVITY TO FILE
-        WriteStats.writeActivity(usersDegreeDistr, users, activityPath);
+        WriteStats.writeActivity(usersDegreeDistr, activityPath);
         // TERMINAL ACTIVITY
         System.out.println("EMPIRICAL ANALYSIS DONE");
     }
