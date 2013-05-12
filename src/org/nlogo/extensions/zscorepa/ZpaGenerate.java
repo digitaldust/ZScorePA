@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.TreeMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.nlogo.api.Argument;
@@ -47,6 +48,7 @@ public class ZpaGenerate extends DefaultCommand {
     String usersStatsPath;
     String threadsStatsPath;
     String activityPath;
+    TreeMap<Double, Node> zindexProb;
 
     @Override
     public Syntax getSyntax() {
@@ -70,6 +72,8 @@ public class ZpaGenerate extends DefaultCommand {
         generator = new PsRandom();
         // CONTEXT
         context = cntxt;
+        // 
+
         /**
          * Start experiments round and statistics analysis. Basically, a zpa
          * network is created then its activity is analyzed, then on the very
@@ -137,14 +141,14 @@ public class ZpaGenerate extends DefaultCommand {
                         // update zindex for thread
                         Collection<Node> neighbors1 = zpa.getNeighbors(t);
                         double newZindex = 0;
-                        for(Node uu:neighbors1){
-                            if(uu.getZindex()>5.271){
-                                newZindex+=uu.getZindex();
+                        for (Node uu : neighbors1) {
+                            if (uu.getZindex() > 5.271) {
+                                newZindex += uu.getZindex();
                             } else {
-                                newZindex+=t.getStartedBy().getZindex();
+                                newZindex += t.getStartedBy().getZindex();
                             }
                         }
-                        newZindex = (newZindex + t.getStartedBy().getZindex())/ neighbors1.size();
+                        newZindex = (newZindex + t.getStartedBy().getZindex()) / neighbors1.size();
                         t.setZindex(newZindex);
                         //System.out.println("new zindex is " + newZindex);
                     }
@@ -173,30 +177,34 @@ public class ZpaGenerate extends DefaultCommand {
         System.out.println("ALL EXPERIMENTS DONE.");                            // TERMINAL ACTIVITY
     }
 
-    private Thread selectAppealingThread(final User u) {
+    private Thread selectAppealingThread(final User u) throws ExtensionException {
 
-        if (u.getZindex() < 5.271) {
-            // chiacchiera in thread grossi
-            return threadWithThreshold(40, 67.930, u);
-        } else if (u.getZindex() >= 5.271 && u.getZindex() < 6.325) {
+        if (u.getZindex() < 1.134) {// 1 quartile
+            // chiacchiera in thread di gente media
+            return threadWithThreshold(5.271, 6.325, u);
+
+        } else if (u.getZindex() >= 1.134 && u.getZindex() < 6.325) { // tra I e III quartile
             // chiacchiera dove ci conosci qualcuno
-            return threadWithThresholdAndFriends(40, 67.930, u);
-        } else {
-            // più probabile uno piccino
-            // se ci sono thread con degree < 2 (nessuno ha risposto), scegline uno, 
-            // altrimenti chiacchiera dove ci conosci qualcuno
+            return threadWithThresholdAndFriends(1.134, 67.930, u);
+
+        } else { // outliers - proxy to expert people very active in the forum
+
             ArrayList<Thread> sample = new ArrayList<Thread>();
             for (Thread t : threads) {
                 if (zpa.degree(t) < 2 && t.getZindex() < 5.271) {
                     sample.add(t);
                 }
             }
-            if(!sample.isEmpty()){
+            //
+            if (!sample.isEmpty()) { // rispondo a un niubbo
+                //
                 return sample.get(context.getRNG().nextInt(sample.size()));
+
             } else {
+                //
                 return threadWithThreshold(6.325, 67.930, u);
             }
-            
+
         }
 
 //        if (nextDouble < helpStrength) {
@@ -310,14 +318,14 @@ public class ZpaGenerate extends DefaultCommand {
         }
     }
 
-//    // TRANSLATED FROM NETLOGO LOTTERY EXAMPLE
+    // TRANSLATED FROM NETLOGO LOTTERY EXAMPLE
 //    private Thread pickOne(double cum) {
 //        // INITIALIZE WINNER THREAD
 //        Thread winner = null;
 //        // RANDOMIZE THREADS ORDER
 //        Collections.shuffle(threads);
 //        // PICK A RANDOM VALUE FROM THE LOTTERY BUCKET 
-//        double pick = getDouble(0, cum);
+//        double pick = generator.nextDouble(cum);
 //        // ASK EACH THREAD
 //        for (Thread t : threads) {
 //            // IF WINNER IS NULL AND THIS THREAD HAS A PROBABILITY GREATER THAN PICK
@@ -361,44 +369,43 @@ public class ZpaGenerate extends DefaultCommand {
         System.out.println("EXPERIMENT " + expp + " ACTIVITY ANALYSYS");        // TERMINAL OUTPUT
         WriteStats.writeActivity(usersDegreeDistr, activityPath);        // WRITE ACTIVITY TO FILE
         System.out.println("EXPERIMENT " + expp + " DONE");                     // TERMINAL ACTIVITY
-        
+
     }
 
-//    private double getDouble(double min, double max) {
-//        double value = Double.NaN;
-//        while (value < min || value > max || Double.isNaN(value)) {
-//            value = context.getRNG().nextDouble();
-//        }
-//        return value;
-//    }
-    private Thread threadWithThreshold(double min, double max, User u) {
-        Thread winner;
+    private Thread threadWithThreshold(double min, double max, User u) throws ExtensionException {
+        Thread winner = null;
+        Collection<Node> uNei = zpa.getNeighbors(u);
         ArrayList<Thread> sampleNei = new ArrayList<Thread>();
         ArrayList<Thread> sampleNotNei = new ArrayList<Thread>();
         for (Thread t : threads) {
-            if (t.getZindex() > min && t.getZindex() < max) {
-                if(zpa.getNeighbors(u).contains(t)){
+            if (t.getZindex() >= min && t.getZindex() <= max) {
+                if (uNei.contains(t)) {
                     sampleNei.add(t);
                 } else {
                     sampleNotNei.add(t);
                 }
             }
         }
-        
-        if(context.getRNG().nextDouble() < 0.7){
-            if(sampleNei.size()>0){
-                winner = sampleNei.get(context.getRNG().nextInt(sampleNei.size()));
+        if (sampleNei.size() > 0 && sampleNotNei.size() > 0) {
+            // 
+            if (context.getRNG().nextDouble() < 0.6) {
+                //
+                winner = preferredExtraction(sampleNei);//sampleNei.get(context.getRNG().nextInt(sampleNei.size()));
             } else {
-                winner = sampleNotNei.get(context.getRNG().nextInt(sampleNotNei.size()));
+                //
+                winner = preferredExtraction(sampleNotNei);// sampleNotNei.get(context.getRNG().nextInt(sampleNotNei.size()));
             }
+        } else if (sampleNotNei.isEmpty() && sampleNei.isEmpty()) {
+            //
+            throw new ExtensionException("Non posso scegliere nessun thread.");
+
+        } else if (sampleNei.isEmpty() && !sampleNotNei.isEmpty()) {
+            //
+            winner = preferredExtraction(sampleNotNei);//winner = sampleNotNei.get(context.getRNG().nextInt(sampleNotNei.size()));
         } else {
-            if(sampleNotNei.size()>0){
-                winner = sampleNotNei.get(context.getRNG().nextInt(sampleNotNei.size()));
-            } else {
-                winner = sampleNei.get(context.getRNG().nextInt(sampleNei.size()));
-            }
+            //
+            winner = preferredExtraction(sampleNei);//winner = sampleNei.get(context.getRNG().nextInt(sampleNei.size()));
         }
-        
         return winner;
     }
 
@@ -407,10 +414,10 @@ public class ZpaGenerate extends DefaultCommand {
         // find two dist nei
         ArrayList<Node> twoDistNei = new ArrayList<Node>();
         Collection<Node> myThreads = zpa.getNeighbors(u);
-        for(Node t:myThreads){
+        for (Node t : myThreads) {
             Collection<Node> neighbors = zpa.getNeighbors(t);
-            for(Node uu:neighbors){
-                if(!twoDistNei.contains(uu)){
+            for (Node uu : neighbors) {
+                if (!twoDistNei.contains(uu)) {
                     twoDistNei.add(uu);
                 }
             }
@@ -419,19 +426,34 @@ public class ZpaGenerate extends DefaultCommand {
         for (Thread t : threads) {
             if (t.getZindex() > min && t.getZindex() < max) {
                 Collection<Node> tNei = zpa.getNeighbors(u);
-                for(Node tt:tNei){
-                    if(twoDistNei.contains(tt)){
+                for (Node tt : tNei) {
+                    if (twoDistNei.contains(tt)) {
                         sample.add(t);
                         break;
                     }
                 }
             }
         }
-        if(!sample.isEmpty()){
+        if (!sample.isEmpty()) {
             winner = sample.get(context.getRNG().nextInt(sample.size()));
         } else {
             winner = threads.get(context.getRNG().nextInt(threads.size()));
         }
         return winner;
+    }
+
+    private Thread preferredExtraction(ArrayList<Thread> sampleNei) {
+        // zindex * degree
+        zindexProb = new TreeMap<Double, Node>();
+        double cum = 0;
+        for(Thread t:sampleNei){
+            double chance = t.getZindex() * zpa.degree(t);
+            zindexProb.put(chance, t);
+            if(cum < chance){
+                cum = chance;
+            }
+        }
+        double pick = generator.nextDouble(cum);
+        return (Thread)zindexProb.higherEntry(pick).getValue();
     }
 }
