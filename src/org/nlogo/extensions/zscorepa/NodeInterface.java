@@ -98,9 +98,9 @@ public interface NodeInterface {
     /**
      * @return the zindex
      */
-    double getZindex();
+    Double getZindex();
     /**
      * @param zindex the zindex to set
      */
-    void setZindex(double zindex);
+    void setZindex(Double zindex);
 }

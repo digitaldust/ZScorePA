@@ -21,16 +21,27 @@ import org.nlogo.api.LogoException;
 import org.nlogo.api.Syntax;
 
 /**
- *
+ * Generate a random network with same degree distribution than the empirical network.
  * @author Simone Gabbriellini
  */
 public class RandomGenerate extends DefaultCommand {
 
+    /**
+     * Get parameters from NetLogo.
+     * @return
+     */
     @Override
     public Syntax getSyntax() {
         return Syntax.commandSyntax(new int[]{Syntax.StringType(), Syntax.StringType(), Syntax.NumberType()});
     }
 
+    /**
+     * Actually executes the command task and generates a random network.
+     * @param argmnts
+     * @param cntxt
+     * @throws ExtensionException
+     * @throws LogoException
+     */
     @Override
     public void perform(Argument[] argmnts, Context cntxt) throws ExtensionException, LogoException {
 
@@ -187,7 +198,7 @@ public class RandomGenerate extends DefaultCommand {
             // TERMINAL OUTPUT
             System.out.println("WRITE USERS STATS TO FILE");
             // WRITE USERS STATS TO FILE
-            WriteStats.writeBipartiteStats(rand, usersDegreeDistr, users.size(), usersStatsPath);
+            WriteStats.writeBipartiteStats(usersDegreeDistr, users.size(), usersStatsPath);
             // TERMINAL OUTPUT
             System.out.println("FIND THREADS DEGREE DISTRIBUTION");
             // FIND THREADS DEGREE DISTRIBUTION
@@ -195,7 +206,7 @@ public class RandomGenerate extends DefaultCommand {
             // TERMINAL OUTPUT
             System.out.println("WRITE THREADS STATS TO FILE");
             // WRITE USERS STATS TO FILE
-            WriteStats.writeBipartiteStats(rand, threadsDegreeDistr, threads.size(), threadsStatsPath);
+            WriteStats.writeBipartiteStats(threadsDegreeDistr, threads.size(), threadsStatsPath);
             // TERMINAL ACTIVITY
             System.out.println("EXPERIMENT " + expp + " DONE");
         }

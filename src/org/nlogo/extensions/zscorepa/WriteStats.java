@@ -8,7 +8,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import org.nlogo.api.ExtensionException;
 
@@ -18,12 +20,13 @@ import org.nlogo.api.ExtensionException;
  */
 public class WriteStats {
 
-    static void writeActivity(HashMap<Double, Collection<Node>> degree, String activityPath) throws ExtensionException {
-        
+    static void writeActivity(UndirectedSparseGraph<Node, Edge> g, HashMap<Double, Collection<Node>> degree, HashMap<Double, Collection<Node>> threaDeg, String activityPath, String threadactivityPath) throws ExtensionException {
+
         // calculate average posts, thread and zindex activity for each degree
         HashMap<Double, Double> posts_hash = new HashMap<Double, Double>();
         HashMap<Double, Double> threads_hash = new HashMap<Double, Double>();
         HashMap<Double, Double> zindex_hash = new HashMap<Double, Double>();
+        HashMap<Double, Double> zindexNei_hash = new HashMap<Double, Double>();
         Set<Double> degrees = degree.keySet();
         Iterator<Double> degIter = degrees.iterator();
         while (degIter.hasNext()) {
@@ -31,29 +34,88 @@ public class WriteStats {
             double key = degIter.next();
             ArrayList<Double> postsDeg = new ArrayList<Double>();
             ArrayList<Double> threadsDeg = new ArrayList<Double>();
-            ArrayList<Double> zindexDeg = new ArrayList<Double>();
+            ArrayList<Double> zindex = new ArrayList<Double>();
+            HashSet<Node> zindexNei = new HashSet<Node>();
             Collection<Node> nodesWithDegree = degree.get(key);
             Iterator<Node> nodesWithDegreeIter = nodesWithDegree.iterator();
             while (nodesWithDegreeIter.hasNext()) {
-                User caller = (User)nodesWithDegreeIter.next();
+                User caller = (User) nodesWithDegreeIter.next();
                 postsDeg.add(caller.getPostsDone());
                 threadsDeg.add(caller.getThreadsDone());
-                zindexDeg.add(caller.getZindex());
+                zindex.add(caller.getZindex());
+                Collection<Node> neighbors = g.getNeighbors(caller);
+                zindexNei.addAll(neighbors);
             }
+            double meanNeiZindex = 0;
+            for (Node n : zindexNei) {
+                meanNeiZindex += n.getZindex();
+            }
+            meanNeiZindex /= zindexNei.size();
             posts_hash.put(key, mean(postsDeg));
             threads_hash.put(key, mean(threadsDeg));
-            zindex_hash.put(key, mean(zindexDeg));
+            zindex_hash.put(key, mean(zindex));
+            zindexNei_hash.put(key, meanNeiZindex);
         }
         // write results to file
         try {
             BufferedWriter out = new BufferedWriter(new FileWriter(activityPath, false));
-            out.append("degree\t" + "ave_posts\t" + "ave_threads\t" + "ave_zindex\n");
+            out.append("degree\t" + "ave_posts\t" + "ave_threads\t" + "ave_zindex\t" + "ave_nei_zindex\n");
             Set<Double> keySet = degree.keySet();
             // order results
             Object[] toArray = keySet.toArray();
             Arrays.sort(toArray);
             for (Object d : toArray) {
-                out.write(d + "\t" + posts_hash.get((Double) d) + "\t" + threads_hash.get((Double) d) + "\t" + zindex_hash.get((Double) d) + "\n");
+                out.write(d + "\t" + posts_hash.get((Double) d) + "\t" + threads_hash.get((Double) d) + "\t" + zindex_hash.get((Double) d) + "\t" + zindexNei_hash.get((Double) d) + "\n");
+            }
+            out.flush();
+            out.close();
+        } catch (IOException e) {
+            throw new ExtensionException(e);
+        }
+        
+        HashMap<Double, Double> zindexThread_hash = new HashMap<Double, Double>();
+        Set<Double> threaDegrees = threaDeg.keySet();
+        Iterator<Double> threaDegIter = threaDegrees.iterator();
+        while (threaDegIter.hasNext()) {
+            // degree value
+            double key = threaDegIter.next();
+            ArrayList<Double> zindexDeg = new ArrayList<Double>();
+            Collection<Node> nodesWithDegree = threaDeg.get(key);
+            for(Node n:nodesWithDegree){
+                zindexDeg.add(n.getZindex());
+            }
+            zindexThread_hash.put(key, mean(zindexDeg));
+        }
+        try {
+            BufferedWriter out = new BufferedWriter(new FileWriter(threadactivityPath, false));
+            out.append("degree\t" + "ave_zindex\n");
+            Set<Double> keySet = threaDeg.keySet();
+            // order results
+            Object[] toArray = keySet.toArray();
+            Arrays.sort(toArray);
+            for (Object d : toArray) {
+                out.write(d + "\t" + zindexThread_hash.get((Double)d) + "\n");
+            }
+            out.flush();
+            out.close();
+        } catch (IOException e) {
+            throw new ExtensionException(e);
+        }
+        
+//        // TODO : FIXME
+        String nuovoFile = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/EXPERIMENTS/mmorpg/nuovofile-empirical.txt";
+        Collection<Node> vertices = g.getVertices();
+        try {
+            BufferedWriter out = new BufferedWriter(new FileWriter(nuovoFile, false));
+            out.append("zindex\t" + "nei_zindex\t"+ "appeal\t" +"degree\t" + "nei_degree\n");
+            for (Node n : vertices) {
+                if(n.getColor().equals("red")){
+                    Collection<Node> neighbors = g.getNeighbors(n);
+                    for(Node t:neighbors){
+                        Thread tt = (Thread) t;
+                        out.write(n.getZindex() + "\t" + tt.getZindex() + "\t" + tt.getAppeal() + "\t" + n.getDegree() + "\t" + t.getDegree() + "\n");
+                    }
+                }
             }
             out.flush();
             out.close();
@@ -62,7 +124,7 @@ public class WriteStats {
         }
     }
 
-    static void writeNetwork(UndirectedSparseGraph<Node, Edge> g, String networkPath) throws ExtensionException{
+    static void writeNetwork(UndirectedSparseGraph<Node, Edge> g, String networkPath) throws ExtensionException {
         // write network.
         try {
             BufferedWriter out = new BufferedWriter(new FileWriter(networkPath, false));
@@ -99,7 +161,7 @@ public class WriteStats {
     /**
      * store results
      */
-    static void writeBipartiteStats(UndirectedSparseGraph<Node, Edge> g, HashMap<Double, Collection<Node>> degree, int size, String statsPath) throws ExtensionException {
+    static void writeBipartiteStats(HashMap<Double, Collection<Node>> degree, int size, String statsPath) throws ExtensionException {
         //
         HashMap<Double, Double> dd_hash = new HashMap<Double, Double>();
         HashMap<Double, Double> red_hash = new HashMap<Double, Double>();
@@ -108,7 +170,7 @@ public class WriteStats {
         HashMap<Double, Double> clustDot_hash = new HashMap<Double, Double>();
         HashMap<Double, Double> clustLowDot_hash = new HashMap<Double, Double>();
         HashMap<Double, Double> clustTopDot_hash = new HashMap<Double, Double>();
-        //
+        // dovrei trovare il mean zindex di chi ha quel grado
         Set<Double> degrees = degree.keySet();
         Iterator<Double> degIter = degrees.iterator();
         while (degIter.hasNext()) {
@@ -126,10 +188,10 @@ public class WriteStats {
                 Node caller = nodesWithDegreeIter.next();
                 neiDeg.addAll(caller.getNeiDeg());
                 twoDistNei.add((double) caller.getTwoDistNei().size());
-                redundancy.add((double) caller.getRedundancy());
-                clustDot.add((double) caller.getClustDot());
-                clustLowDot.add((double) caller.getClustLowDot());
-                clustTopDot.add((double) caller.getClustTopDot());
+                redundancy.add(caller.getRedundancy());
+                clustDot.add(caller.getClustDot());
+                clustLowDot.add(caller.getClustLowDot());
+                clustTopDot.add(caller.getClustTopDot());
             }
             dd_hash.put(key, ((double) nodesWithDegree.size() / (double) size));
             nei_deg_hash.put(key, mean(neiDeg));
@@ -351,7 +413,7 @@ public class WriteStats {
         }
     }
 
-    static void writeDegreeDistribution(UndirectedSparseGraph<Node, Edge> g, ArrayList<Node> nodes, String degreeDistributionPath) throws ExtensionException {
+    static void writeDegreeDistribution(UndirectedSparseGraph<Node, Edge> g, List<Node> nodes, String degreeDistributionPath) throws ExtensionException {
         try {
             BufferedWriter out = new BufferedWriter(new FileWriter(degreeDistributionPath, false));
             for (Node t : nodes) {
@@ -363,8 +425,9 @@ public class WriteStats {
             throw new ExtensionException(e);
         }
     }
-    
-    static HashMap<Double, Collection<Node>> findDegreeDistribution(ArrayList<Node> nodes) {
+
+    // RESTITUISCE UN 
+    static HashMap<Double, Collection<Node>> findDegreeDistribution(List<Node> nodes) {
         HashMap<Double, Collection<Node>> degree = new HashMap<Double, Collection<Node>>();
         // store an array of nodes for each degree found in the network
         Iterator<Node> degreeIter = nodes.iterator();
@@ -382,5 +445,27 @@ public class WriteStats {
             }
         }
         return degree;
+    }
+
+    static void writeAttributesForZpa(UndirectedSparseGraph<Node, Edge> g, List<Node> usersLcc, List<Node> threadsLcc, String attributesForZpaPath) throws ExtensionException {
+
+        // write results to file
+        try {
+            BufferedWriter out = new BufferedWriter(new FileWriter(attributesForZpaPath, false));
+            for (Node n : usersLcc) {
+                User u = (User) n;
+                // THREAD
+                out.write(u.getName() + ";" + u.getPostsDone() + ";" + u.getThreadsDone() + ";" + u.getZindex() + "\n");
+            }
+            for (Node n : threadsLcc) {
+                Thread t = (Thread) n;
+                // THREAD
+                out.write(t.getName() + ";" + t.getStartedBy().getName() + ";" + t.getZindex() + ";" + t.getAppeal() + "\n");
+            }
+            out.flush();
+            out.close();
+        } catch (IOException e) {
+            throw new ExtensionException(e);
+        }
     }
 }

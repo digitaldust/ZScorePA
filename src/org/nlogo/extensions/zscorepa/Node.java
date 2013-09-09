@@ -20,7 +20,7 @@ public class Node implements NodeInterface {
     private double clustLowDot;
     private double clustTopDot;
     private double redundancy;
-    private double zindex;
+    private Double zindex;
     private ArrayList<Node> nei;
     private Set<Node> twoDistNei;
     private Set<Node> neiOfNei;
@@ -200,7 +200,7 @@ public class Node implements NodeInterface {
      * @return the zindex
      */
     @Override
-    public double getZindex() {
+    public Double getZindex() {
         return zindex;
     }
 
@@ -208,7 +208,7 @@ public class Node implements NodeInterface {
      * @param zindex the zindex to set
      */
     @Override
-    public void setZindex(double zindex) {
+    public void setZindex(Double zindex) {
         this.zindex = zindex;
     }
 

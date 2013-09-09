@@ -4,6 +4,9 @@
  */
 package org.nlogo.extensions.zscorepa;
 
+import edu.uci.ics.jung.algorithms.filters.Filter;
+import edu.uci.ics.jung.algorithms.filters.KNeighborhoodFilter;
+import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.UndirectedSparseGraph;
 import edu.uci.ics.jung.graph.util.EdgeType;
 import flanagan.math.PsRandom;
@@ -14,8 +17,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
@@ -35,19 +42,20 @@ public class ZpaGenerate extends DefaultCommand {
     String forumName;
     String attributesFilePath;
     double helpStrength;
-    double maxThreadSize;
+    double maxAppeal;
     double expNum;
     PsRandom generator;
     String networkPath;
     public static UndirectedSparseGraph<Node, Edge> zpa;
     // USERS ARRAY
-    ArrayList<User> users;
+    List<User> users;
     // THREADS ARRAY
-    ArrayList<Thread> threads;
+    List<Thread> threads;
     Context context;
     String usersStatsPath;
     String threadsStatsPath;
     String activityPath;
+    String threadactivityPath;
     TreeMap<Double, Node> zindexProb;
 
     @Override
@@ -61,11 +69,9 @@ public class ZpaGenerate extends DefaultCommand {
         // FORUM NAME
         forumName = argmnts[0].getString();
         // attributes file name path
-        attributesFilePath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/_network_attributes/" + forumName + "-empirical-attributes.txt";
+        attributesFilePath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/_network_attributes/" + forumName + "-empirical-zpa-attributes.txt";
         // PROB TO CHOSE MECHANISM ONE OR MECHANISM TWO
         helpStrength = argmnts[1].getDoubleValue();
-        // MAX THREAD SIZE
-        maxThreadSize = argmnts[2].getDoubleValue();
         // EXP NUMBER
         expNum = argmnts[3].getDoubleValue();
         // RANDOM GENERATOR
@@ -73,7 +79,7 @@ public class ZpaGenerate extends DefaultCommand {
         // CONTEXT
         context = cntxt;
         // 
-
+        maxAppeal = 0;
         /**
          * Start experiments round and statistics analysis. Basically, a zpa
          * network is created then its activity is analyzed, then on the very
@@ -96,6 +102,7 @@ public class ZpaGenerate extends DefaultCommand {
             usersStatsPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/users-stats-" + forumName + "-zpa.txt";
             threadsStatsPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/threads-stats-" + forumName + "-zpa.txt";
             activityPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/users-activity-" + forumName + "-zpa.txt";
+            threadactivityPath = "/Users/digitaldust/Dropbox/Gabbriellini-RFS/experiments/" + forumName + "/EXP " + expp + "/thread-activity-" + forumName + "-zpa.txt";
             // CREATE AN EMPTY GRAPH 
             zpa = new UndirectedSparseGraph<Node, Edge>();
             // TOTAL ACTIVITY TO BE MANAGED BY THE MODEL
@@ -122,7 +129,6 @@ public class ZpaGenerate extends DefaultCommand {
              * Begin ZPA procedure.
              */
             while (totalActivity > 0) {                                         // WHILE USERS HAVE POSTS TO DO
-
                 CollectionUtils.filter(users, new Predicate() {                 // FILTER USERS THAT HAVE POSTS TO DO
                     @Override
                     public boolean evaluate(Object object) {
@@ -132,25 +138,12 @@ public class ZpaGenerate extends DefaultCommand {
 
                 Collections.shuffle(users);                                     // RANDOMIZE AVAILABLE USERS' ORDER BEFORE ASKING
                 for (User u : users) {                                          // ASK EACH USER
-                    Collections.shuffle(threads);                               // RANDOMIZE THREADS ORDER
+                    //Collections.shuffle(threads);                               // RANDOMIZE THREADS ORDER
                     Thread t = selectAppealingThread(u);                        // SELECT AN APPEALING THREAD ACCORDING TO THIS USER'S FEATURES
                     // add the link only if it is not already there
                     Collection<Node> neighbors = zpa.getNeighbors(u);
                     if (!neighbors.contains(t)) {
                         zpa.addEdge(new Edge(u, t), u, t, EdgeType.UNDIRECTED);  // ADD THIS UNDIRECTED LINK TO THE NETWORK
-                        // update zindex for thread
-                        Collection<Node> neighbors1 = zpa.getNeighbors(t);
-                        double newZindex = 0;
-                        for (Node uu : neighbors1) {
-                            if (uu.getZindex() > 5.271) {
-                                newZindex += uu.getZindex();
-                            } else {
-                                newZindex += t.getStartedBy().getZindex();
-                            }
-                        }
-                        newZindex = (newZindex + t.getStartedBy().getZindex()) / neighbors1.size();
-                        t.setZindex(newZindex);
-                        //System.out.println("new zindex is " + newZindex);
                     }
                     /**
                      * UPDATE USER STATS.
@@ -158,17 +151,15 @@ public class ZpaGenerate extends DefaultCommand {
                     u.setPostsToDo(u.getPostsToDo() - 1);                       // DECREMENT POSTS TO DO
                     u.setPostsDone(u.getPostsDone() + 1);                       // INCREMENT POSTS DONE
                     /**
-                     * UPDATE THREAD STATS.
+                     * UPDATE TOTAL ACTIVITY.
                      */
-//                    if (t.getDegree() > maxThreadSize) {                        // REMOVE THREAD IF TOO BIG
-//                        threads.remove(t);
-//                    }
                     totalActivity--;                                            // DECREMENT TOTAL ACTIVITY
                 }
                 Date date = new Date();                                         // RETRIEVE DATE
                 System.out.println(totalActivity + " at time " + // TERMINAL OUTPUT 
                         date.toString() + " after a round.");                   // 
             }
+
             /**
              * End ZPA procedure.
              */
@@ -177,86 +168,113 @@ public class ZpaGenerate extends DefaultCommand {
         System.out.println("ALL EXPERIMENTS DONE.");                            // TERMINAL ACTIVITY
     }
 
-    private Thread selectAppealingThread(final User u) throws ExtensionException {
+    private Thread selectAppealingThread(User u) throws ExtensionException {
 
-        if (u.getZindex() < 1.134) {// 1 quartile
-            // chiacchiera in thread di gente media
-            return threadWithThreshold(5.271, 6.325, u);
-
-        } else if (u.getZindex() >= 1.134 && u.getZindex() < 6.325) { // tra I e III quartile
-            // chiacchiera dove ci conosci qualcuno
-            return threadWithThresholdAndFriends(1.134, 67.930, u);
-
-        } else { // outliers - proxy to expert people very active in the forum
-
-            ArrayList<Thread> sample = new ArrayList<Thread>();
+        //
+        Thread winner;
+        if (generator.nextDouble() < 0.38) {
+            Collection<Node> neighbors = zpa.getNeighbors(u);
+            List<Thread> sample = new ArrayList<Thread>();
             for (Thread t : threads) {
-                if (zpa.degree(t) < 2 && t.getZindex() < 5.271) {
+                if (!neighbors.contains(t)) {
                     sample.add(t);
                 }
             }
-            //
-            if (!sample.isEmpty()) { // rispondo a un niubbo
-                //
-                return sample.get(context.getRNG().nextInt(sample.size()));
-
-            } else {
-                //
-                return threadWithThreshold(6.325, 67.930, u);
+            winner = logExtract(u, sample);
+        } else {
+            // threads dove ci conosci qualcuno
+            Collection<Node> neighbors = zpa.getNeighbors(u);
+            List<Thread> list = new ArrayList<Thread>();
+            for (Node subset : neighbors) {
+                list.add((Thread) subset);
             }
-
+            if (list.isEmpty()) { // non si può fare, quindi è come se la prima condizione avesse fallito
+                List<Thread> sample = new ArrayList<Thread>();
+                for (Thread t : threads) {
+                    if (!neighbors.contains(t)) {
+                        sample.add(t);
+                    }
+                }
+                winner = logExtract(u, sample);
+            } else {
+                // ci sono già connesso, non importa a chi scrivo.
+                winner = list.get(context.getRNG().nextInt(list.size()));
+            }
         }
-
-//        if (nextDouble < helpStrength) {
-//            /**
-//             * *****************************
-//             * BIG USER TRIES TO HELP NEWBY, WHILE NEWBY THANKS THEM
-//             */
-//            // ASK EACH THREAD
-//            for (Thread t : threads) {
-//                chance = n.getZindex() - t.getZindex(); // rende meno interessanti i thread con l'andare del tempo
-//                if (chance <= 0) {
-//                    chance = 0;
-//                }
-//                if (myThreads.contains(t)) {                                // se ci sono già connesso, riduco la probabilità di sceglierlo
-//                        chance *= generator.nextDouble(0, 0.5);           // the smaller the random value, the less probable is to select it
-//                }
-//                //chance = Math.exp(chance);
-//                t.setChance(chance);
-//                cum += chance;
-//            }
-//        } else {
-//            for (Thread t : threads) {
-//                double degree = t.getDegree();
-//                chance = t.getZindex() * degree - n.getZindex();
-//                if (chance <= 0) {
-//                    chance = 0;
-//                }
-//                if (!myThreads.contains(t)) {                                       // se ci sono già connesso, riduco la probabilità di sceglierlo
-//                    if (chance > 0) {
-//                        chance *= getDouble(0, 0.2);                              // the smaller the random value, the less probable is to select it
-//                    } else {
-//                        chance = degree * getDouble(0, 0.2);
-//                    }
-//                }
-//                chance = Math.exp(chance);
-//                t.setChance(chance);
-//                cum += chance;
-//            }
-//        }
-        // RETURN A THREAD
-//        return null;
+        if (winner == null) {
+            throw new ExtensionException("winner is null");
+        }
+        return winner;
     }
 
-// INITIALIZE THE NETWORK WITH THE ATTRIBUTES FILE
+    private Thread logExtract(User u, List<Thread> sample) {
+        Thread winner = null;
+        Collections.sort(sample, new Comparator<Thread>() {
+            @Override
+            public int compare(Thread one, Thread other) {
+                return one.getZindex().compareTo(other.getZindex());
+            }
+        });
+//        double cum = 0;
+        double pick = generator.nextLogNormal(3, 1);
+        if (pick < 0) {
+            pick = 0;
+        }
+        if (pick > 62) {
+            pick = 62;
+        }
+        System.out.println("pick is " + pick);
+        System.out.println("sample is " + sample.size());
+        int counter = 0;
+        for (Thread t : sample) {
+//            System.out.println("thread zindex is " + t.getZindex());
+            if (t.getZindex() >= pick) {
+//                System.out.println("ritorno " + t.getZindex());
+                winner = t;
+                break;
+            }
+            counter++;
+            if (counter == sample.size()) {
+                winner = t;
+                break;
+            }
+        }
+        //
+//        for (Thread t : sample) {
+//            //if (u.getZindex() < 13.5) {
+//            t.setChance((t.getAppeal() / maxAppeal) * zpa.degree(t)); // il mio parametro per aiutare il fit
+//
+//            if (u.getZindex() < 6) {
+//            } else {
+//            }
+//            //}
+//
+//            cum += t.getChance();
+//        }
+//        double pick = generator.nextDouble(cum);
+//        // ASK EACH THREAD
+//        for (Thread t : sample) {
+//            // IF WINNER IS NULL AND THIS THREAD HAS A PROBABILITY GREATER THAN PICK
+//            if (winner == null) {
+//                if (t.getChance() > pick) {
+//                    // THIS THREAD IS THE ONE
+//                    winner = t;
+//                } else {
+//                    // OTHERWISE DECREMENT PICK OF THIS THREAD PROBABILITY
+//                    pick -= t.getChance();
+//                }
+//            }
+//        }
+        return winner;
+    }
+
+    // INITIALIZE THE NETWORK WITH THE ATTRIBUTES FILE
     private double createInitialNetwork(BufferedReader attributeFile) throws ExtensionException {
         // CREATE ARRAYS TO HOLD USERS AND THREADS
         users = new ArrayList<User>();
         threads = new ArrayList<Thread>();
         // STRING TO HOLD THE BUFFER LINE
         String line;
-        // COUNTER FOR SETTING THREAD ID
-        int threadCounter = 0;
         // INITIALIZE TOTAL ACTIVITY - I.E. THE TOTAL NUMBER OF POSTS
         double totalActivity = 0;
         // TRY
@@ -264,50 +282,51 @@ public class ZpaGenerate extends DefaultCommand {
             // FOR EACH LINE IN THE BUFFER
             while ((line = attributeFile.readLine()) != null) {
                 // CREATE THE ARRAY
-                String[] splitUser = line.split(",");
-                // CREATE USER
-                User u = new User();
-                // SET USER'S ID
-                u.setId(Integer.valueOf(splitUser[0].substring(1)));
-                // SET HIS NAME
-                u.setName(splitUser[0]);
-                // SET HIS COLOR
-                u.setColor("red");
-                // SET HIS TOTAL NUMBER OF POSTS
-                u.setPostsToDo(Double.valueOf(splitUser[1]));
-                // INCREMENT TOTAL ACTIVITY WITH THE POSTS MADE BY THIS USER
-                totalActivity += u.getPostsToDo();
-                // SET HIS TOTAL NUMBER OF THREADS
-                u.setThreadsToDo(Double.valueOf(splitUser[2]));
-                // CALCULATE USER'S Z-INDEX
-                double zindex = (u.getPostsToDo() - u.getThreadsToDo()) / Math.sqrt(u.getPostsToDo() + u.getThreadsToDo());
-                // SET HIS Z-INDEX
-                u.setZindex(zindex);
-                // ADD THIS USER TO THE NETWORK
-                zpa.addVertex(u);
-                // ADD THIS USER TO THE LIST OF USERS
-                users.add(u);
-                // USED TO CALCULATE ACTIVITY STATS AND LEAVE THREADS() FREE FOR MANIPULATION
-                u.setThreadsDone(u.getThreadsToDo());
-                // CREATE ALL THE THREADS STARTED BY THIS USER
-                int limit = (int) u.getThreadsToDo();
-                // FOR EACH THREAD
-                for (int i = 0; i < limit; i++) {
+                String[] split = line.split(";");
+                // BUILD USERS FIRST
+                if (split[0].startsWith("u")) {
+                    // CREATE USER
+                    User u = new User();
+                    // SET USER'S ID
+                    u.setId(Integer.valueOf(split[0].substring(1)));
+                    // SET HIS NAME
+                    u.setName(split[0]);
+                    // SET HIS COLOR
+                    u.setColor("red");
+                    // SET HIS TOTAL NUMBER OF POSTS
+                    u.setPostsToDo(Double.valueOf(split[1]));
+                    // INCREMENT TOTAL ACTIVITY WITH THE POSTS MADE BY THIS USER
+                    totalActivity += u.getPostsToDo();
+                    // SET HIS TOTAL NUMBER OF THREADS
+                    u.setThreadsToDo(Double.valueOf(split[2]));
+                    // SET HIS Z-INDEX
+                    u.setZindex(Double.valueOf(split[3]));
+                    // ADD THIS USER TO THE NETWORK
+                    zpa.addVertex(u);
+                    // ADD THIS USER TO THE LIST OF USERS
+                    users.add(u);
+                    // USED TO CALCULATE ACTIVITY STATS AND LEAVE THREADS() FREE FOR MANIPULATION
+                    u.setThreadsDone(u.getThreadsToDo());
+                } else {
                     // CREATE THREAD
                     Thread t = new Thread();
-                    t.setId(threadCounter);                                     // SET THREAD ID
-                    t.setName("t" + threadCounter);                             // SET THREAD NAME
+                    t.setId(Integer.valueOf(split[0].substring(1)));                                     // SET THREAD ID
+                    t.setName(split[0]);                             // SET THREAD NAME
                     t.setColor("blue");                                         // SET THREAD COLOR
                     t.setChance(0.0);                                           // SET PROBABILITY TO GET CHOSEN - FOR THREADS ONLY
-                    t.setStartedBy(u);                                          // SET WHO STARTED THIS THREAD
-                    t.setZindex(u.getZindex());                                 // SET Z-INDEX OF THE THREAD - EQUALS THE Z-INDEX OF ITS STARTER
-                    threadCounter++;                                            // INCREMENT THREAD COUNTER
+                    User uu = getUser(split[1]);
+                    t.setStartedBy(uu);                                          // SET WHO STARTED THIS THREAD
+                    t.setZindex(Double.valueOf(split[2]));                                 // SET Z-INDEX OF THE THREAD - EQUALS THE Z-INDEX OF ITS STARTER
+                    t.setAppeal(Double.valueOf(split[3]));
+                    if (maxAppeal < t.getAppeal()) {
+                        maxAppeal = t.getAppeal();
+                    }
                     zpa.addVertex(t);                                           // ADD THREAD TO THE NETWORK
                     threads.add(t);                                             // ADD THREAD TO THREADS LIST
-                    zpa.addEdge(new Edge(u, t), u, t, EdgeType.UNDIRECTED);                  // ADD UNDIRECTED LINK TO THE NETWORK
-                    u.setPostsToDo(u.getPostsToDo() - 1);                       // DECREMENT TOTAL NUMBER OF POSTS BY 1 - USER CONSUMES A POST TO START A THREAD
-                    u.setPostsDone(u.getPostsDone() + 1);                       // USED TO CALCULATE POSTS ACTIVITY STATS AND LEAVE POSTS() FREE FOR MANIPULATION
-                    totalActivity--;                                            // FOR THE SAME REASON, DECREMENT TOTAL ACTIVITY
+                    zpa.addEdge(new Edge(uu, t), uu, t, EdgeType.UNDIRECTED);                  // ADD UNDIRECTED LINK TO THE NETWORK
+                    uu.setPostsToDo(uu.getPostsToDo() - 1);                       // DECREMENT TOTAL NUMBER OF POSTS BY 1 - USER CONSUMES A POST TO START A THREAD
+                    uu.setPostsDone(uu.getPostsDone() + 1);                       // USED TO CALCULATE POSTS ACTIVITY STATS AND LEAVE POSTS() FREE FOR MANIPULATION
+                    totalActivity--;
                 }
             }
             return totalActivity;
@@ -318,33 +337,22 @@ public class ZpaGenerate extends DefaultCommand {
         }
     }
 
-    // TRANSLATED FROM NETLOGO LOTTERY EXAMPLE
-//    private Thread pickOne(double cum) {
-//        // INITIALIZE WINNER THREAD
-//        Thread winner = null;
-//        // RANDOMIZE THREADS ORDER
-//        Collections.shuffle(threads);
-//        // PICK A RANDOM VALUE FROM THE LOTTERY BUCKET 
-//        double pick = generator.nextDouble(cum);
-//        // ASK EACH THREAD
-//        for (Thread t : threads) {
-//            // IF WINNER IS NULL AND THIS THREAD HAS A PROBABILITY GREATER THAN PICK
-//            if (winner == null && t.getChance() > pick) {
-//                // THIS THREAD IS THE ONE
-//                winner = t;
-//            } else {
-//                // OTHERWISE DECREMENT PICK OF THIS THREAD PROBABILITY
-//                pick -= t.getChance();
-//            }
-//        }
-//        return winner;
-//    }
-    // 
+    // get a user
+    private User getUser(String s) {
+        for (User n : users) {
+            if (n.getName().equals(s)) {
+                return n;
+            }
+        }
+        return null;
+    }
+
+    // DO STATS AND WRITE TO FILE
     private void callStatsStuff(int expp) throws ExtensionException {
 
         Collection<Node> nodes = zpa.getVertices();                             // RETRIEVE ALL NODES
-        ArrayList<Node> allUser = new ArrayList<Node>();                                          // CLEAN USERS LIST
-        ArrayList<Node> allThread = new ArrayList<Node>();                                      // CLEAN THREADS LIST
+        List<Node> allUser = new ArrayList<Node>();                                          // CLEAN USERS LIST
+        List<Node> allThread = new ArrayList<Node>();                                      // CLEAN THREADS LIST
         for (Node n : nodes) {                                                  // ASK EACH NODE
             if (n.getColor().equals("red")) {                                   // IF NODE IS A USER
                 allUser.add(n);                                            // ADD TO USERS LIST
@@ -361,99 +369,46 @@ public class ZpaGenerate extends DefaultCommand {
         System.out.println("FIND USERS DEGREE DISTRIBUTION");                   // TERMINAL OUTPUT
         HashMap<Double, Collection<Node>> usersDegreeDistr = WriteStats.findDegreeDistribution(allUser); // FIND USERS DEGREE DISTRIBUTION
         System.out.println("WRITE USERS STATS TO FILE");                        // TERMINAL OUTPUT
-        WriteStats.writeBipartiteStats(zpa, usersDegreeDistr, allUser.size(), usersStatsPath);// WRITE USERS STATS TO FILE
+        WriteStats.writeBipartiteStats(usersDegreeDistr, allUser.size(), usersStatsPath);// WRITE USERS STATS TO FILE
         System.out.println("FIND THREADS DEGREE DISTRIBUTION");                 // TERMINAL OUTPUT
         HashMap<Double, Collection<Node>> threadsDegreeDistr = WriteStats.findDegreeDistribution(allThread);// FIND THREADS DEGREE DISTRIBUTION
         System.out.println("WRITE THREADS STATS TO FILE");                      // TERMINAL OUTPUT
-        WriteStats.writeBipartiteStats(zpa, threadsDegreeDistr, allThread.size(), threadsStatsPath);// WRITE USERS STATS TO FILE
+        WriteStats.writeBipartiteStats(threadsDegreeDistr, allThread.size(), threadsStatsPath);// WRITE USERS STATS TO FILE
         System.out.println("EXPERIMENT " + expp + " ACTIVITY ANALYSYS");        // TERMINAL OUTPUT
-        WriteStats.writeActivity(usersDegreeDistr, activityPath);        // WRITE ACTIVITY TO FILE
+        WriteStats.writeActivity(zpa, usersDegreeDistr, threadsDegreeDistr, activityPath, threadactivityPath);        // WRITE ACTIVITY TO FILE
         System.out.println("EXPERIMENT " + expp + " DONE");                     // TERMINAL ACTIVITY
 
     }
 
-    private Thread threadWithThreshold(double min, double max, User u) throws ExtensionException {
-        Thread winner = null;
-        Collection<Node> uNei = zpa.getNeighbors(u);
-        ArrayList<Thread> sampleNei = new ArrayList<Thread>();
-        ArrayList<Thread> sampleNotNei = new ArrayList<Thread>();
-        for (Thread t : threads) {
-            if (t.getZindex() >= min && t.getZindex() <= max) {
-                if (uNei.contains(t)) {
-                    sampleNei.add(t);
-                } else {
-                    sampleNotNei.add(t);
-                }
-            }
-        }
-        if (sampleNei.size() > 0 && sampleNotNei.size() > 0) {
-            // 
-            if (context.getRNG().nextDouble() < 0.6) {
-                //
-                winner = preferredExtraction(sampleNei);//sampleNei.get(context.getRNG().nextInt(sampleNei.size()));
-            } else {
-                //
-                winner = preferredExtraction(sampleNotNei);// sampleNotNei.get(context.getRNG().nextInt(sampleNotNei.size()));
-            }
-        } else if (sampleNotNei.isEmpty() && sampleNei.isEmpty()) {
-            //
-            throw new ExtensionException("Non posso scegliere nessun thread.");
+    // filter threads
+//    private List<Thread> filteredThreads(User u) throws ExtensionException {
+//        //
+//        List<Thread> sample = new ArrayList<Thread>();
+//        for (Thread t : threads) {
+//            t.setChance(t.getZindex() * zpa.degree(t));
+//            sample.add((Thread) t);
+//        }
+//        return sample;
+//    }
+//
+//    // retrieves threads where my 2-dist nei have posted and filtered
 
-        } else if (sampleNei.isEmpty() && !sampleNotNei.isEmpty()) {
-            //
-            winner = preferredExtraction(sampleNotNei);//winner = sampleNotNei.get(context.getRNG().nextInt(sampleNotNei.size()));
-        } else {
-            //
-            winner = preferredExtraction(sampleNei);//winner = sampleNei.get(context.getRNG().nextInt(sampleNei.size()));
-        }
-        return winner;
-    }
-
-    private Thread threadWithThresholdAndFriends(double min, double max, User u) {
-        Thread winner;
+    private Set<Thread> twoDistThreads(User u) throws ExtensionException {
         // find two dist nei
-        ArrayList<Node> twoDistNei = new ArrayList<Node>();
-        Collection<Node> myThreads = zpa.getNeighbors(u);
-        for (Node t : myThreads) {
-            Collection<Node> neighbors = zpa.getNeighbors(t);
-            for (Node uu : neighbors) {
-                if (!twoDistNei.contains(uu)) {
-                    twoDistNei.add(uu);
-                }
-            }
+        Filter<Node, Edge> filter = new KNeighborhoodFilter(u, 2, KNeighborhoodFilter.EdgeType.IN_OUT);
+        Graph<Node, Edge> transform = filter.transform(zpa);
+        // take threads that are in common with my 2-dist-nei but not already in my neighborhood.
+        Collection<Node> vertices = transform.getVertices();
+        Set<Thread> twoDistThreads = new HashSet<Thread>();
+        Collection<Node> neighbors = zpa.getNeighbors(u);
+        for (Node v : neighbors) {
+//            if (v.getColor().equals("blue")) {
+            Thread t = (Thread) v;
+            t.setChance(t.getZindex() * zpa.degree(t)); // passa il tempo e i thread diventano meno appetibili
+            twoDistThreads.add(t);
+//            }
         }
-        ArrayList<Thread> sample = new ArrayList<Thread>();
-        for (Thread t : threads) {
-            if (t.getZindex() > min && t.getZindex() < max) {
-                Collection<Node> tNei = zpa.getNeighbors(u);
-                for (Node tt : tNei) {
-                    if (twoDistNei.contains(tt)) {
-                        sample.add(t);
-                        break;
-                    }
-                }
-            }
-        }
-        if (!sample.isEmpty()) {
-            winner = sample.get(context.getRNG().nextInt(sample.size()));
-        } else {
-            winner = threads.get(context.getRNG().nextInt(threads.size()));
-        }
-        return winner;
+        return twoDistThreads;
     }
 
-    private Thread preferredExtraction(ArrayList<Thread> sampleNei) {
-        // zindex * degree
-        zindexProb = new TreeMap<Double, Node>();
-        double cum = 0;
-        for(Thread t:sampleNei){
-            double chance = t.getZindex() * zpa.degree(t);
-            zindexProb.put(chance, t);
-            if(cum < chance){
-                cum = chance;
-            }
-        }
-        double pick = generator.nextDouble(cum);
-        return (Thread)zindexProb.higherEntry(pick).getValue();
-    }
 }

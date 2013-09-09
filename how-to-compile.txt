@@ -1,6 +1,6 @@
 How to compile ZScorePA:
 
-javac -classpath "lib/*::/Applications/NetLogo 5.0.4/NetLogo.jar" -d classes src/zscorepa/Edge.java src/zscorepa/Model.java src/zscorepa/Node.java src/zscorepa/RandomGenerate.java src/zscorepa/zscorepa.java src/zscorepa/Statistics.java -Xlint:unchecked
+javac -classpath "lib/*::/Applications/NetLogo 5.0.4/NetLogo.jar" -d classes src/org/nlogo/extensions/zscorepa/Edge.java src/org/nlogo/extensions/zscorepa/ZpaGenerate.java src/org/nlogo/extensions/zscorepa/Node.java src/org/nlogo/extensions/zscorepa/RandomGenerate.java src/org/nlogo/extensions/zscorepa/zscorepa.java src/org/nlogo/extensions/zscorepa/Statistics.java src/org/nlogo/extensions/zscorepa/WriteStats.java -Xlint:unchecked
 
 jar cvfm /Users/digitaldust/Dropbox/Gabbriellini-RFS/zscorepa/zscorepa.jar manifest.txt -C classes .
 

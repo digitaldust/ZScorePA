@@ -71,4 +71,17 @@
     nbproject/build-impl.xml file. 
 
     -->
+    <target name="-pre-init">
+        <property name="project.name" value="ZScorePA" />
+        <property name="class.manager" value="org.nlogo.extensions.zscorepa.Manager" />
+        <manifest file="manifest.mf">
+            <attribute name="Manifest-Version" value="1.0" />           
+            <attribute name="Extension-Name" value="${project.name}" />
+            <attribute name="Class-Manager" value="${class.manager}" />
+            <attribute name="NetLogo-Extension-API-Version" value="5.0" />
+        </manifest>
+    </target>
+    <target name="-post-jar">
+        <delete file="manifest.mf"/>
+    </target>
 </project>
