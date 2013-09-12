@@ -143,7 +143,7 @@ public class ZpaGenerate extends DefaultCommand {
                     // add the link only if it is not already there
                     Collection<Node> neighbors = zpa.getNeighbors(u);
                     if (!neighbors.contains(t)) {
-                        zpa.addEdge(new Edge(u, t), u, t, EdgeType.UNDIRECTED);  // ADD THIS UNDIRECTED LINK TO THE NETWORK
+                        zpa.addEdge(new Edge(0), u, t, EdgeType.UNDIRECTED);  // ADD THIS UNDIRECTED LINK TO THE NETWORK
                     }
                     /**
                      * UPDATE USER STATS.
@@ -323,7 +323,7 @@ public class ZpaGenerate extends DefaultCommand {
                     }
                     zpa.addVertex(t);                                           // ADD THREAD TO THE NETWORK
                     threads.add(t);                                             // ADD THREAD TO THREADS LIST
-                    zpa.addEdge(new Edge(uu, t), uu, t, EdgeType.UNDIRECTED);                  // ADD UNDIRECTED LINK TO THE NETWORK
+                    zpa.addEdge(new Edge(0), uu, t, EdgeType.UNDIRECTED);                  // ADD UNDIRECTED LINK TO THE NETWORK
                     uu.setPostsToDo(uu.getPostsToDo() - 1);                       // DECREMENT TOTAL NUMBER OF POSTS BY 1 - USER CONSUMES A POST TO START A THREAD
                     uu.setPostsDone(uu.getPostsDone() + 1);                       // USED TO CALCULATE POSTS ACTIVITY STATS AND LEAVE POSTS() FREE FOR MANIPULATION
                     totalActivity--;
@@ -367,11 +367,11 @@ public class ZpaGenerate extends DefaultCommand {
         WriteStats.findValues(zpa);                                             // CALCULATE STATS FOR EACH NODES
         System.out.println("EXPERIMENT " + expp + " STATS");                    // TERMINAL OUTPUT
         System.out.println("FIND USERS DEGREE DISTRIBUTION");                   // TERMINAL OUTPUT
-        HashMap<Double, Collection<Node>> usersDegreeDistr = WriteStats.findDegreeDistribution(allUser); // FIND USERS DEGREE DISTRIBUTION
+        HashMap<Double, Collection<Node>> usersDegreeDistr = WriteStats.findNodesWithDegree(allUser); // FIND USERS DEGREE DISTRIBUTION
         System.out.println("WRITE USERS STATS TO FILE");                        // TERMINAL OUTPUT
         WriteStats.writeBipartiteStats(usersDegreeDistr, allUser.size(), usersStatsPath);// WRITE USERS STATS TO FILE
         System.out.println("FIND THREADS DEGREE DISTRIBUTION");                 // TERMINAL OUTPUT
-        HashMap<Double, Collection<Node>> threadsDegreeDistr = WriteStats.findDegreeDistribution(allThread);// FIND THREADS DEGREE DISTRIBUTION
+        HashMap<Double, Collection<Node>> threadsDegreeDistr = WriteStats.findNodesWithDegree(allThread);// FIND THREADS DEGREE DISTRIBUTION
         System.out.println("WRITE THREADS STATS TO FILE");                      // TERMINAL OUTPUT
         WriteStats.writeBipartiteStats(threadsDegreeDistr, allThread.size(), threadsStatsPath);// WRITE USERS STATS TO FILE
         System.out.println("EXPERIMENT " + expp + " ACTIVITY ANALYSYS");        // TERMINAL OUTPUT

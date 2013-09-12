@@ -19,7 +19,7 @@ public class Manager extends DefaultClassManager {
     public void load(PrimitiveManager pm) throws ExtensionException {
         
         // statistics about an already existing network
-        pm.addPrimitive("empirical-stats", new Statistics());
+        pm.addPrimitive("stats", new Statistics());
         // generate a random network
         pm.addPrimitive("random-generate", new RandomGenerate());
         // generate a ZPA network

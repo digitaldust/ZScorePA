@@ -9,39 +9,24 @@ package org.nlogo.extensions.zscorepa;
  * @author ogabbrie
  */
 public class Edge {
-    private String fromid;
-    private String toid;
+    //
+    private int weight;
     
-    public Edge(Node user, Node thread){
-        this.fromid = user.getName();
-        this.toid = thread.getName();
-    }
-    /**
-     * @return the fromid
-     */
-    public String getFromid() {
-        return fromid;
+    public Edge(int weight){
+        this.weight = weight;
     }
 
     /**
-     * @param fromid the fromid to set
+     * @return the weight
      */
-    public void setFromid(String fromid) {
-        this.fromid = fromid;
+    public int getWeight() {
+        return weight;
     }
 
     /**
-     * @return the toid
+     * @param weight the weight to set
      */
-    public String getToid() {
-        return toid;
+    public void setWeight(int weight) {
+        this.weight = weight;
     }
-
-    /**
-     * @param toid the toid to set
-     */
-    public void setToid(String toid) {
-        this.toid = toid;
-    }
-    
 }

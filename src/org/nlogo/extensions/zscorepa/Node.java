@@ -5,27 +5,41 @@
 package org.nlogo.extensions.zscorepa;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
  * 
  * @author Simone Gabbriellini
  */
-public class Node implements NodeInterface {
+public class Node implements NodeInterface  {
     private int id;
     private String name;
     private String color;
-    private double degree;
+    private Integer degree;
+    private Double redundancy;
+    private Set<Node> nei;
+    private Double averageNeiDegree;
+    private Set<Node> twoDistNei;
+    
+    
     private double clustDot;
     private double clustLowDot;
     private double clustTopDot;
-    private double redundancy;
+    
+    
     private Double zindex;
-    private ArrayList<Node> nei;
-    private Set<Node> twoDistNei;
-    private Set<Node> neiOfNei;
-    private ArrayList<Double> neiDeg;
+    
+    
+    private List<Node> neiOfNei;
+    private List<Double> neiDeg;
 
+    public Node(){
+        this.nei = new HashSet<Node>();
+        this.twoDistNei = new HashSet<Node>();
+    }
     /**
      * @return the node
      */
@@ -78,7 +92,7 @@ public class Node implements NodeInterface {
      * @return the degree
      */
     @Override
-    public double getDegree() {
+    public Integer getDegree() {
         return degree;
     }
 
@@ -86,7 +100,7 @@ public class Node implements NodeInterface {
      * @param degree the degree to set
      */
     @Override
-    public void setDegree(double degree) {
+    public void setDegree(Integer degree) {
         this.degree = degree;
     }    
 
@@ -110,7 +124,7 @@ public class Node implements NodeInterface {
      * @return the neiDeg
      */
     @Override
-    public ArrayList<Node> getNei() {
+    public Set<Node> getNei() {
         return nei;
     }
 
@@ -118,13 +132,13 @@ public class Node implements NodeInterface {
      * @param neiDeg the neiDeg to set
      */
     @Override
-    public void setNei(Node aNei) {
-        this.nei.add(aNei);
+    public void setNei(Collection<Node> myNei) {
+        this.nei.addAll(myNei);
     }
     
     @Override
     public void initializeNei(){
-        this.nei = new ArrayList<Node>();
+        this.nei = new HashSet<Node>();
     }
     /**
      * @return the clustDot
@@ -188,8 +202,8 @@ public class Node implements NodeInterface {
      * @param neiOfNei the neiOfNei to set
      */
     @Override
-    public void setTwoDistNei(Set<Node> aTwoDistNei) {
-        this.twoDistNei = aTwoDistNei;
+    public void setTwoDistNei(Node aTwoDistNei) {
+        this.twoDistNei.add(aTwoDistNei);
     }
     
     public void setAllTwoDistNei(Set<Node> aTwoDistNei) {
@@ -215,21 +229,21 @@ public class Node implements NodeInterface {
     /**
      * @return the neiOfNei
      */
-    public Set<Node> getNeiOfNei() {
+    public List<Node> getNeiOfNei() {
         return neiOfNei;
     }
 
     /**
      * @param neiOfNei the neiOfNei to set
      */
-    public void setNeiOfNei(Set<Node> neiOfNei) {
+    public void setNeiOfNei(List<Node> neiOfNei) {
         this.neiOfNei = neiOfNei;
     }
 
     /**
      * @return the neiDeg
      */
-    public ArrayList<Double> getNeiDeg() {
+    public List<Double> getNeiDeg() {
         return neiDeg;
     }
 
@@ -239,4 +253,15 @@ public class Node implements NodeInterface {
     public void setNeiDeg(ArrayList<Double> neiDeg) {
         this.neiDeg = neiDeg;
     }
+
+    @Override
+    public void setAverageNeiDegree(Double averageNeiDegree) {
+        this.averageNeiDegree = averageNeiDegree;
+    }
+
+    @Override
+    public Double getAverageNeiDegree() {
+        return averageNeiDegree;
+    }
+
 }

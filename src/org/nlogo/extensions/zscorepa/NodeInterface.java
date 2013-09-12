@@ -4,7 +4,7 @@
  */
 package org.nlogo.extensions.zscorepa;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -39,11 +39,11 @@ public interface NodeInterface {
     /**
      * @return the degree
      */
-    double getDegree();
+    Integer getDegree();
     /**
      * @param degree the degree to set
      */
-    void setDegree(double degree);
+    void setDegree(Integer degree);
     /**
      * @return the redundancy
      */
@@ -55,11 +55,11 @@ public interface NodeInterface {
     /**
      * @return the neiDeg
      */
-    ArrayList<Node> getNei();
+    Set<Node> getNei();
     /**
      * @param neiDeg the neiDeg to set
      */
-    void setNei(Node nei);
+    void setNei(Collection<Node> nei);
     /**
      * @return the clustDot
      */
@@ -91,7 +91,7 @@ public interface NodeInterface {
     /**
      * @param neiOfNei the neiOfNei to set
      */
-    void setTwoDistNei(Set<Node> aTwoDistNei);
+    void setTwoDistNei(Node aTwoDistNei);
     
     
     void initializeNei();
@@ -103,4 +103,8 @@ public interface NodeInterface {
      * @param zindex the zindex to set
      */
     void setZindex(Double zindex);
+    
+    void setAverageNeiDegree(Double averageNeiDegree);
+    
+    Double getAverageNeiDegree();
 }
