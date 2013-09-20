@@ -19,26 +19,23 @@ public class Node implements NodeInterface  {
     private String name;
     private String color;
     private Integer degree;
-    private Double redundancy;
     private Set<Node> nei;
-    private Double averageNeiDegree;
+    private List<Integer> neiDegree;
     private Set<Node> twoDistNei;
+    private Double redundancy;
+    private Double CC;
+    private Double CClow;
+    private Double CCtop;
     
-    
-    private double clustDot;
-    private double clustLowDot;
-    private double clustTopDot;
-    
-    
+    // don't know
     private Double zindex;
-    
-    
     private List<Node> neiOfNei;
     private List<Double> neiDeg;
 
     public Node(){
         this.nei = new HashSet<Node>();
         this.twoDistNei = new HashSet<Node>();
+        this.neiDegree = new ArrayList<Integer>();
     }
     /**
      * @return the node
@@ -144,48 +141,48 @@ public class Node implements NodeInterface  {
      * @return the clustDot
      */
     @Override
-    public double getClustDot() {
-        return clustDot;
+    public double getCC() {
+        return CC;
     }
 
     /**
      * @param clustDot the clustDot to set
      */
     @Override
-    public void setClustDot(double clustDot) {
-        this.clustDot = clustDot;
+    public void setCC(double clustDot) {
+        this.CC = clustDot;
     }
 
     /**
      * @return the clustLowDot
      */
     @Override
-    public double getClustLowDot() {
-        return clustLowDot;
+    public double getCClow() {
+        return CClow;
     }
 
     /**
      * @param clustLowDot the clustLowDot to set
      */
     @Override
-    public void setClustLowDot(double clustLowDot) {
-        this.clustLowDot = clustLowDot;
+    public void setCClow(double clustLowDot) {
+        this.CClow = clustLowDot;
     }
 
     /**
      * @return the clustTopDot
      */
     @Override
-    public double getClustTopDot() {
-        return clustTopDot;
+    public double getCCtop() {
+        return CCtop;
     }
 
     /**
      * @param clustTopDot the clustTopDot to set
      */
     @Override
-    public void setClustTopDot(double clustTopDot) {
-        this.clustTopDot = clustTopDot;
+    public void setCCtop(double clustTopDot) {
+        this.CCtop = clustTopDot;
     }
 
 
@@ -255,13 +252,13 @@ public class Node implements NodeInterface  {
     }
 
     @Override
-    public void setAverageNeiDegree(Double averageNeiDegree) {
-        this.averageNeiDegree = averageNeiDegree;
+    public void setNeiDegree(Integer neiDegree) {
+        this.neiDegree.add(neiDegree);
     }
 
     @Override
-    public Double getAverageNeiDegree() {
-        return averageNeiDegree;
+    public List<Integer> getNeiDegree() {
+        return neiDegree;
     }
 
 }

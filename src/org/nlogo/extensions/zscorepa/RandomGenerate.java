@@ -84,6 +84,8 @@ public class RandomGenerate extends DefaultCommand {
             Set<String> threadNames = new HashSet<String>();
             // create 
             String line;
+            // id
+            int id = 0;
             // while there are lines in the file, i.e. there are links to add...
             //<editor-fold defaultstate="collapsed" desc="...BUILD EMPIRICAL NETWORK">
             while ((line = netFile.readLine()) != null) {
@@ -113,6 +115,9 @@ public class RandomGenerate extends DefaultCommand {
                     u = new User();
                     // add name
                     u.setName(userName);
+                    // add id
+                    u.setId(id);
+                    id++;
                     // add name to user names list
                     userNames.add(userName);
                     // add user to objects list
@@ -125,6 +130,9 @@ public class RandomGenerate extends DefaultCommand {
                     t = new Thread();
                     // add name
                     t.setName(threadName);
+                    // add id
+                    t.setId(id);
+                    id++;
                     // add name to thread names list
                     threadNames.add(threadName);
                     // add thread to objects list
@@ -135,6 +143,9 @@ public class RandomGenerate extends DefaultCommand {
                     u = new User();
                     // add name
                     u.setName(userName);
+                    // add id
+                    u.setId(id);
+                    id++;
                     // add name to user names list
                     userNames.add(userName);
                     // add user to objects list
@@ -143,6 +154,9 @@ public class RandomGenerate extends DefaultCommand {
                     t = new Thread();
                     // add name
                     t.setName(threadName);
+                    // add id
+                    t.setId(id);
+                    id++;
                     // add name to thread names list
                     threadNames.add(threadName);
                     // add thread to objects list
@@ -152,6 +166,7 @@ public class RandomGenerate extends DefaultCommand {
                 empirical.addEdge(e, u, t, EdgeType.UNDIRECTED);
             }
             //</editor-fold>
+            //System.out.println("nodes are " + empirical.getVertexCount() + " edges are " + empirical.getEdgeCount());
             // DEBUG
             System.out.println(" done!");
             // how many links are there
@@ -199,6 +214,18 @@ public class RandomGenerate extends DefaultCommand {
             String usersRedundancy = experimentFolder + "/users-redundancy.txt";
             // file to hold threads redundancy
             String threadsRedundancy = experimentFolder + "/threads-redundancy.txt";
+            // file to hold users CC
+            String usersCC = experimentFolder + "/users-CC.txt";
+            // file to hold threads CC
+            String threadsCC = experimentFolder + "/threads-CC.txt";
+            // file to hold users CC top
+            String usersCCtop = experimentFolder + "/users-CC-top.txt";
+            // file to hold threads CC top
+            String threadsCCtop = experimentFolder + "/threads-CC-top.txt";
+            // file to hold users CC low
+            String usersCClow = experimentFolder + "/users-CC-low.txt";
+            // file to hold threads CC low
+            String threadsCClow = experimentFolder + "/threads-CC-low.txt";
             // now that all the information is gathered, execute the experiments
             for (int exp = 0; exp < experiments; exp++) {
                 // random network
@@ -208,7 +235,7 @@ public class RandomGenerate extends DefaultCommand {
                     // node placeholder
                     Node n;
                     // clone this node from empirical to random network...
-                    if(v.getName().startsWith("u")){
+                    if (v.getName().startsWith("u")) {
                         // node is a user
                         n = new User();
                     } else {
@@ -217,6 +244,8 @@ public class RandomGenerate extends DefaultCommand {
                     }
                     // set name value
                     n.setName(v.getName());
+                    // set id
+                    n.setId(v.getId());
                     // set degree value
                     n.setDegree(v.getDegree());
                     // add the cloned node to random network
@@ -252,9 +281,9 @@ public class RandomGenerate extends DefaultCommand {
                     // while l is bigger than zero
                     while (l > 0) {
                         // find a random user
-                        User u = (User)randomUsers.get(cntxt.getRNG().nextInt(randomUsers.size()));
+                        User u = (User) randomUsers.get(cntxt.getRNG().nextInt(randomUsers.size()));
                         // find a random thread
-                        Thread t = (Thread)randomThreads.get(cntxt.getRNG().nextInt(randomThreads.size()));
+                        Thread t = (Thread) randomThreads.get(cntxt.getRNG().nextInt(randomThreads.size()));
                         // check that they are not already connected
                         if (!random.getNeighbors(t).contains(u)) {
                             // add a link between the two
@@ -289,9 +318,9 @@ public class RandomGenerate extends DefaultCommand {
                             } else {
                                 // you should pick big users first to avoid the risk
                                 // of leaving very big users without threads available
-                                u = (User)pickHigherDegreeUser(randomUsers, cntxt);
+                                u = (User) pickHigherDegreeUser(randomUsers, cntxt);
                                 // if user is not null
-                                if(u != null){
+                                if (u != null) {
                                     // decrement u degree ability
                                     u.setDegree(u.getDegree() - 1);
                                     // user found, update flag to exit the user while loop
@@ -311,9 +340,9 @@ public class RandomGenerate extends DefaultCommand {
                             } else {
                                 // among available threads for this user, with higher
                                 // probability pick one with higher degree
-                                t = (Thread)pickAvailableThread(u, cntxt, randomThreads, random);
+                                t = (Thread) pickAvailableThread(u, cntxt, randomThreads, random);
                                 // if thread is not null
-                                if(t != null){
+                                if (t != null) {
                                     // decrement t degree ability
                                     t.setDegree(t.getDegree() - 1);
                                     // thread found, update flag to exit the thread while loop
@@ -350,13 +379,15 @@ public class RandomGenerate extends DefaultCommand {
                 writeToFile.flush();
                 writeToFile.close();
                 //</editor-fold>
-                /** Find degree distribution. */
+                /**
+                 * Find degree distribution.
+                 */
                 // DEBUG
                 System.out.print("Find users degree distribution...");
                 // find users degree distribution
                 HashMap<Integer, Collection<Node>> usersWithDegree = WriteStats.findNodesForDegree(randomUsers, random);
                 // write degree distribution to file
-                WriteStats.writeDegreeDistribution(usersWithDegree, randomUsers.size(), exp, usersDegreeDistribution);
+                WriteStats.writeDegreeDistribution(usersWithDegree, randomUsers.size(), exp, usersDegreeDistribution, method);
                 // DEBUG
                 System.out.println(" done.");
                 // DEBUG
@@ -364,48 +395,82 @@ public class RandomGenerate extends DefaultCommand {
                 // find threads degree distribution
                 HashMap<Integer, Collection<Node>> threadsWithDegree = WriteStats.findNodesForDegree(randomThreads, random);
                 // write degree distribution to file
-                WriteStats.writeDegreeDistribution(threadsWithDegree, randomThreads.size(), exp, threadsDegreeDistribution);
+                WriteStats.writeDegreeDistribution(threadsWithDegree, randomThreads.size(), exp, threadsDegreeDistribution, method);
                 // DEBUG
                 System.out.println(" done.");
-                /** Find average degree of nei of nodes with degree. */
-                // DEBUG
-                System.out.print("Find average degree of neighbors of users with degree...");
-                // find users redundancy
-                WriteStats.writeAverageDegreeOfNeiOfNodesWithDegree(usersWithDegree, exp, usersAverageDegreeOfNei, random);
-                // DEBUG
-                System.out.println(" done.");
-                // DEBUG
-                System.out.print("Find average degree of neighbors of threads with degree...");
-                // find users redundancy
-                WriteStats.writeAverageDegreeOfNeiOfNodesWithDegree(threadsWithDegree, exp, threadsAverageDegreeOfNei, random);
-                // DEBUG
-                System.out.println(" done.");
-                /** Find number of 2-distance neighbours of nodes with degree. */
-                // DEBUG
-                System.out.print("Find number of distance 2 neighbors of users with degree....");
-                // find users redundancy
-                WriteStats.writeNumberOfDistanceTwoNeighborsOfNodesWithDegree(usersWithDegree, exp, usersNumberOfTwoDistNei, random);
-                // DEBUG
-                System.out.println(" done.");
-                // DEBUG
-                System.out.print("Find number of distance 2 neighbors of threads with degree...");
-                // find users redundancy
-                WriteStats.writeNumberOfDistanceTwoNeighborsOfNodesWithDegree(threadsWithDegree, exp, threadsNumberOfTwoDistNei, random);
-                // DEBUG
-                System.out.println(" done.");
-                /** Find redundancy of nodes with degree. */
-                // DEBUG
-                System.out.print("Find redundancy of users with degree...");
-                // write users redundancy to file
-                WriteStats.writeRedundancyOfNodesWithDegree(usersWithDegree, randomUsers.size(), exp, usersRedundancy);
-                // DEBUG
-                System.out.println(" done.");
-                // DEBUG
-                System.out.print("Find redundancy of threads with degree...");
-                // write threads redundancy to file
-                WriteStats.writeRedundancyOfNodesWithDegree(threadsWithDegree, randomThreads.size(), exp, threadsRedundancy);
-                // DEBUG
-                System.out.println(" done.");
+                //
+                if (method.equals("degree")) {
+                    /**
+                     * Find average degree of nei of nodes with degree.
+                     */
+                    // DEBUG
+                    System.out.print("Find average degree of neighbors of users with degree...");
+                    // find users redundancy
+                    WriteStats.writeAverageDegreeOfNeiOfNodesWithDegree(usersWithDegree, exp, usersAverageDegreeOfNei, random);
+                    // DEBUG
+                    System.out.println(" done.");
+                    // DEBUG
+                    System.out.print("Find average degree of neighbors of threads with degree...");
+                    // find users redundancy
+                    WriteStats.writeAverageDegreeOfNeiOfNodesWithDegree(threadsWithDegree, exp, threadsAverageDegreeOfNei, random);
+                    // DEBUG
+                    System.out.println(" done.");
+                    //
+                    /**
+                     * Find number of 2-distance neighbours of nodes with
+                     * degree.
+                     */
+                    // DEBUG
+                    System.out.print("Find number of distance 2 neighbors of users with degree....");
+                    // find users redundancy
+                    WriteStats.writeNumberOfDistanceTwoNeighborsOfNodesWithDegree(usersWithDegree, exp, usersNumberOfTwoDistNei, random);
+                    // DEBUG
+                    System.out.println(" done.");
+                    // DEBUG
+                    System.out.print("Find number of distance 2 neighbors of threads with degree...");
+                    // find users redundancy
+                    WriteStats.writeNumberOfDistanceTwoNeighborsOfNodesWithDegree(threadsWithDegree, exp, threadsNumberOfTwoDistNei, random);
+                    // DEBUG
+                    System.out.println(" done.");
+                    // 
+                    /**
+                     * Find redundancy of nodes with degree.
+                     */
+                    // DEBUG
+                    System.out.print("Find redundancy of users with degree...");
+                    // write users redundancy to file
+                    WriteStats.writeRedundancyOfNodesWithDegree(usersWithDegree, randomUsers.size(), exp, usersRedundancy);
+                    // DEBUG
+                    System.out.println(" done.");
+                    // DEBUG
+                    System.out.print("Find redundancy of threads with degree...");
+                    // write threads redundancy to file
+                    WriteStats.writeRedundancyOfNodesWithDegree(threadsWithDegree, randomThreads.size(), exp, threadsRedundancy);
+                    // DEBUG
+                    System.out.println(" done.");
+                    //
+                    /**
+                     * Find CC, CCtop and CClow clustering coefficients of nodes
+                     * with degree.
+                     */
+                    // clear previous results
+                    WriteStats.intersections = new HashMap<String, Integer>();
+                    WriteStats.unions = new HashMap<String, Integer>();
+                    WriteStats.minimums = new HashMap<String, Integer>();
+                    WriteStats.maximums = new HashMap<String, Integer>();
+                    // DEBUG
+                    System.out.print("Find CC clustering coefficient of users with degree...");
+                    // write users redundancy to file
+                    WriteStats.writeCCsOfNodesWithDegree(usersWithDegree, randomUsers.size(), exp, usersCC, usersCCtop, usersCClow);
+                    // DEBUG
+                    System.out.println(" done.");
+                    // DEBUG
+                    System.out.print("Find CC clustering coefficient of threads with degree...");
+                    // write threads redundancy to file
+                    WriteStats.writeCCsOfNodesWithDegree(threadsWithDegree, randomThreads.size(), exp, threadsCC, threadsCCtop, threadsCClow);
+                    // DEBUG
+                    System.out.println(" done.");
+                }
             }
         } catch (Exception ex) {
             // a problem occurred reading the file, see stacktrace
@@ -454,7 +519,7 @@ public class RandomGenerate extends DefaultCommand {
     }
 
     /**
-     * Sort users according to their degree, and then picks the one with higher 
+     * Sort users according to their degree, and then picks the one with higher
      * degree first.
      *
      * @param randomUsers, the list of users available
@@ -469,7 +534,7 @@ public class RandomGenerate extends DefaultCommand {
     }
 
     /**
-     * Finds available threads for a particular user, then extracts with higher 
+     * Finds available threads for a particular user, then extracts with higher
      * probability among availables the ones with higher degree.
      *
      * @param u, the user
@@ -509,12 +574,10 @@ public class RandomGenerate extends DefaultCommand {
             return t;
         }
     }
-    
-    private static Comparator<Node> COMPARATOR = new Comparator<Node>(){
-	// This is where the sorting happens.
+    private static Comparator<Node> COMPARATOR = new Comparator<Node>() {
+        // This is where the sorting happens.
         @Override
-        public int compare(Node o1, Node o2)
-        {
+        public int compare(Node o1, Node o2) {
             return o2.getDegree() - o1.getDegree();
         }
     };

@@ -5,6 +5,7 @@
 package org.nlogo.extensions.zscorepa;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -63,27 +64,27 @@ public interface NodeInterface {
     /**
      * @return the clustDot
      */
-    double getClustDot();
+    double getCC();
     /**
      * @param clustDot the clustDot to set
      */
-    void setClustDot(double clustDot);
+    void setCC(double clustDot);
     /**
      * @return the clustLowDot
      */
-    double getClustLowDot();
+    double getCClow();
     /**
      * @param clustLowDot the clustLowDot to set
      */
-    void setClustLowDot(double clustLowDot);
+    void setCClow(double clustLowDot);
     /**
      * @return the clustTopDot
      */
-    double getClustTopDot();
+    double getCCtop();
     /**
      * @param clustTopDot the clustTopDot to set
      */
-    void setClustTopDot(double clustTopDot);
+    void setCCtop(double clustTopDot);
     /**
      * @return the neiOfNei
      */
@@ -104,7 +105,15 @@ public interface NodeInterface {
      */
     void setZindex(Double zindex);
     
-    void setAverageNeiDegree(Double averageNeiDegree);
+    /**
+     *
+     * @param neiDegree
+     */
+    void setNeiDegree(Integer neiDegree);
     
-    Double getAverageNeiDegree();
+    /**
+     *
+     * @return
+     */
+    List<Integer> getNeiDegree();
 }

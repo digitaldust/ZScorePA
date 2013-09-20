@@ -364,16 +364,16 @@ public class ZpaGenerate extends DefaultCommand {
         System.out.println("EXPERIMENT " + expp + " WRITE NETWORK");            // TERMINAL OUTPUT
         WriteStats.writeNetwork(zpa, networkPath);                              // WRITE ZPA NETWORK TO FILE
         System.out.println("CALCULATE STATS FOR EACH NODES");                   // TERMINAL OUTPUT
-        WriteStats.findValues(zpa);                                             // CALCULATE STATS FOR EACH NODES
+       // WriteStats.findValues(zpa);                                             // CALCULATE STATS FOR EACH NODES
         System.out.println("EXPERIMENT " + expp + " STATS");                    // TERMINAL OUTPUT
         System.out.println("FIND USERS DEGREE DISTRIBUTION");                   // TERMINAL OUTPUT
         HashMap<Double, Collection<Node>> usersDegreeDistr = WriteStats.findNodesWithDegree(allUser); // FIND USERS DEGREE DISTRIBUTION
         System.out.println("WRITE USERS STATS TO FILE");                        // TERMINAL OUTPUT
-        WriteStats.writeBipartiteStats(usersDegreeDistr, allUser.size(), usersStatsPath);// WRITE USERS STATS TO FILE
+//        WriteStats.writeBipartiteStats(usersDegreeDistr, allUser.size(), usersStatsPath);// WRITE USERS STATS TO FILE
         System.out.println("FIND THREADS DEGREE DISTRIBUTION");                 // TERMINAL OUTPUT
         HashMap<Double, Collection<Node>> threadsDegreeDistr = WriteStats.findNodesWithDegree(allThread);// FIND THREADS DEGREE DISTRIBUTION
         System.out.println("WRITE THREADS STATS TO FILE");                      // TERMINAL OUTPUT
-        WriteStats.writeBipartiteStats(threadsDegreeDistr, allThread.size(), threadsStatsPath);// WRITE USERS STATS TO FILE
+ //       WriteStats.writeBipartiteStats(threadsDegreeDistr, allThread.size(), threadsStatsPath);// WRITE USERS STATS TO FILE
         System.out.println("EXPERIMENT " + expp + " ACTIVITY ANALYSYS");        // TERMINAL OUTPUT
         WriteStats.writeActivity(zpa, usersDegreeDistr, threadsDegreeDistr, activityPath, threadactivityPath);        // WRITE ACTIVITY TO FILE
         System.out.println("EXPERIMENT " + expp + " DONE");                     // TERMINAL ACTIVITY
