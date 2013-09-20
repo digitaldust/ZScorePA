@@ -425,27 +425,8 @@ public class WriteStats {
                 //<editor-fold defaultstate="collapsed" desc="WRITE TO FILE LINKS GENERATED NETWORK">
                 // create a string builder which adds current values
                 StringBuilder values = new StringBuilder();
-                // read the file
-                org.apache.commons.io.LineIterator it = org.apache.commons.io.FileUtils.lineIterator(new File(path));
-                //
-                List<Integer> degreesAlreadyWritten = new ArrayList<Integer>();
-                // retrieve all the degrees already written to the file
-                try {
-                    // 
-                    while (it.hasNext()) {
-                        String line = it.nextLine();
-                        // find degree of this line
-                        String[] id = line.split("\t");
-                        // finds degrees already written
-                        degreesAlreadyWritten.add(Integer.valueOf(id[0]));
-                    }
-                // finally... 
-                } finally {
-                    // close the stream
-                    it.close();
-                }
                 // read again file, this time to find the right place where to write results
-                it = org.apache.commons.io.FileUtils.lineIterator(new File(path));
+                org.apache.commons.io.LineIterator it = org.apache.commons.io.FileUtils.lineIterator(new File(path));
                 // retrieve all the degrees already written to the file
                 try {
                     // 
@@ -469,14 +450,16 @@ public class WriteStats {
                     // 
                     for(Integer i:keySetOrdered){
                         // 
-                        values.append(i);
-                        // 
-                        for(int c=0;c<counter;c++){
+                        values.append(i).append("\t");
+                        // as many zeroes as the last experiments minus this one, where we have the value
+                        for(int c=1;c<counter;c++){
                            // 
                             values.append("0").append("\t");
                         }
+                        // find value
+                        float f = (float) result.get(i).size() / size;
                         // close the line
-                        values.append("\n");
+                        values.append(f).append("\n");
                     }
                 // finally
                 } finally {
